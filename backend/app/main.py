@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from app import models  # noqa: F401  (registra las tablas en Base.metadata)
 from app.config import DATA_DIR, EVIDENCE_DIR
 from app.db import Base, SessionLocal, engine
-from app.routers import health
+from app.routers import health, inspections, templates
 from app.seed import seed_templates
 
 logger = logging.getLogger("fieldcheck")
@@ -27,6 +27,8 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(title="FieldCheck API", version="1.0.0", lifespan=lifespan)
 app.include_router(health.router)
+app.include_router(templates.router)
+app.include_router(inspections.router)
 
 
 # Si algo falla adentro, el cliente recibe un mensaje genérico y el detalle queda en el log del servidor
