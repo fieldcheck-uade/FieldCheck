@@ -1,0 +1,62 @@
+package ar.edu.uade.fieldcheck.core.theme
+
+import androidx.compose.ui.graphics.Color
+
+// Paleta definida en docs/pantallas.md (sección 1.1). Todos los pares texto/fondo cumplen WCAG AA.
+
+// Modo claro
+val BackgroundLight = Color(0xFFFAFAFC)
+val SurfaceLight = Color(0xFFFFFFFF)
+val OnSurfaceLight = Color(0xFF1B1B1F)
+val OnSurfaceVariantLight = Color(0xFF44474F)
+val PrimaryLight = Color(0xFF1F4E8C)
+val OnPrimaryLight = Color(0xFFFFFFFF)
+val OutlineLight = Color(0xFF74777F)
+// Contenedores: docs no los define; se eligen tonos neutros y azules de la misma familia
+// para que Material no use su violeta por defecto (tarjetas, FAB, chips)
+val PrimaryContainerLight = Color(0xFFD6E3FF)
+val OnPrimaryContainerLight = Color(0xFF001B3E)
+val SecondaryContainerLight = Color(0xFFDAE2F9)
+val OnSecondaryContainerLight = Color(0xFF131C2B)
+val SurfaceVariantLight = Color(0xFFE1E2EC)
+val SurfaceContainerLowestLight = Color(0xFFFFFFFF)
+val SurfaceContainerLowLight = Color(0xFFF4F4F8)
+val SurfaceContainerLight = Color(0xFFEEEEF2)
+val SurfaceContainerHighLight = Color(0xFFE8E8EC)
+val SurfaceContainerHighestLight = Color(0xFFE3E2E6)
+
+val CompliesLight = Color(0xFF1E6B34)
+val OnCompliesLight = Color(0xFFFFFFFF)
+val NotCompliesLight = Color(0xFFB3261E)
+val OnNotCompliesLight = Color(0xFFFFFFFF)
+val NotApplicableLight = Color(0xFF5C5F66)
+val OnNotApplicableLight = Color(0xFFFFFFFF)
+val OfflineBannerLight = Color(0xFFFFE08A)
+val OnOfflineBannerLight = Color(0xFF1B1B1F)
+
+// Modo oscuro
+val BackgroundDark = Color(0xFF121316)
+val OnSurfaceDark = Color(0xFFE4E2E6)
+val OnSurfaceVariantDark = Color(0xFFC4C6D0)
+val PrimaryDark = Color(0xFFA8C7FA)
+val OnPrimaryDark = Color(0xFF0A305F)
+val OutlineDark = Color(0xFF8E9099)
+val PrimaryContainerDark = Color(0xFF284777)
+val OnPrimaryContainerDark = Color(0xFFD6E3FF)
+val SecondaryContainerDark = Color(0xFF3E4759)
+val OnSecondaryContainerDark = Color(0xFFDAE2F9)
+val SurfaceVariantDark = Color(0xFF44474F)
+val SurfaceContainerLowestDark = Color(0xFF0D0E11)
+val SurfaceContainerLowDark = Color(0xFF1B1B1F)
+val SurfaceContainerDark = Color(0xFF1F1F23)
+val SurfaceContainerHighDark = Color(0xFF2A2A2D)
+val SurfaceContainerHighestDark = Color(0xFF343538)
+
+val CompliesDark = Color(0xFF7DDB93)
+val OnCompliesDark = Color(0xFF0B2913)
+val NotCompliesDark = Color(0xFFFFB4AB)
+val OnNotCompliesDark = Color(0xFF690005)
+val NotApplicableDark = Color(0xFFC4C6D0)
+val OnNotApplicableDark = Color(0xFF1B1B1F)
+val OfflineBannerDark = Color(0xFFFFD54F)
+val OnOfflineBannerDark = Color(0xFF1B1B1F)
