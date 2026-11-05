@@ -1,0 +1,22 @@
+<resources>
+    <!-- P3 · Ejecución de la inspección -->
+    <string name="execution_see_all_items">Ver todos los ítems</string>
+    <string name="execution_progress">Ítem %1$d de %2$d</string>
+    <string name="execution_saved">Guardado</string>
+    <string name="execution_note_label">Nota (opcional)</string>
+    <string name="execution_note_placeholder">Escribí lo que observaste</string>
+    <string name="execution_add_photo">Agregar foto</string>
+    <string name="execution_photo_description">Foto %1$d de %2$d del ítem %3$d</string>
+    <string name="execution_evidence_warning">Agregá una nota o una foto como evidencia.</string>
+    <string name="execution_previous">Anterior</string>
+    <string name="execution_next">Siguiente</string>
+    <string name="execution_review_and_finish">Revisar y finalizar</string>
+    <string name="execution_read_only">Esta inspección ya está finalizada. Solo se puede consultar.</string>
+    <string name="execution_photo_saved">Foto guardada</string>
+    <string name="execution_no_camera">No encontramos una app de cámara en el dispositivo.</string>
+    <string name="execution_delete_photo_title">¿Eliminar esta foto?</string>
+    <string name="execution_delete_photo_confirm">Eliminar</string>
+    <string name="execution_cancel">Cancelar</string>
+    <string name="execution_close">Cerrar</string>
+    <string name="execution_photo_full_screen">Foto de evidencia a pantalla completa</string>
+</resources>

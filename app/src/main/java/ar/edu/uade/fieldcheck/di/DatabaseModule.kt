@@ -2,7 +2,9 @@ package ar.edu.uade.fieldcheck.di
 
 import android.content.Context
 import androidx.room.Room
+import ar.edu.uade.fieldcheck.data.local.dao.EvidenceDao
 import ar.edu.uade.fieldcheck.data.local.dao.InspectionDao
+import ar.edu.uade.fieldcheck.data.local.dao.TemplateDao
 import ar.edu.uade.fieldcheck.data.local.database.FieldCheckDatabase
 import dagger.Module
 import dagger.Provides
@@ -36,5 +38,15 @@ object DatabaseModule {
     @Provides
     fun provideInspectionDao(database: FieldCheckDatabase): InspectionDao {
         return database.inspectionDao()
+    }
+
+    @Provides
+    fun provideTemplateDao(database: FieldCheckDatabase): TemplateDao {
+        return database.templateDao()
+    }
+
+    @Provides
+    fun provideEvidenceDao(database: FieldCheckDatabase): EvidenceDao {
+        return database.evidenceDao()
     }
 }

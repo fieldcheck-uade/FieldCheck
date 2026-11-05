@@ -3,17 +3,37 @@
 
     <!-- Acciones comunes -->
     <string name="action_retry">Reintentar</string>
+    <string name="action_back">Volver</string>
 
     <!-- Estado de sincronización -->
     <string name="sync_pending">Pendiente</string>
     <string name="sync_synced">Sincronizada</string>
     <string name="sync_failed">Error</string>
 
+    <!-- Resultados de un ítem -->
+    <string name="result_complies">Cumple</string>
+    <string name="result_not_complies">No cumple</string>
+    <string name="result_not_applicable">N/A</string>
+    <string name="result_pending">Sin completar</string>
+    <!-- Chip de conteo: "Cumple 16" -->
+    <string name="result_count">%1$s %2$d</string>
+
+    <!-- Componentes compartidos -->
+    <string name="offline_banner">Sin conexión. Tus cambios se guardan en el teléfono.</string>
+    <string name="evidence_location_badge">Con ubicación</string>
+
     <!-- P1 · Historial -->
     <string name="history_new_inspection">Nueva inspección</string>
     <string name="history_section_in_progress">En curso</string>
     <string name="history_section_finished">Finalizadas</string>
     <string name="history_progress">%1$d de %2$d ítems</string>
+    <string name="history_card_subtitle">%1$s · %2$s</string>
     <string name="history_empty_title">Todavía no hay inspecciones</string>
     <string name="history_empty_description">Creá la primera con el botón de abajo.</string>
+    <string name="history_loading">Cargando inspecciones</string>
+
+    <!-- Títulos de las pantallas en construcción -->
+    <string name="new_inspection_title">Nueva inspección</string>
+    <string name="review_title">Revisión</string>
+    <string name="detail_title">Detalle</string>
 </resources>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- P2 · Nueva inspección. El título de la barra está en strings.xml (new_inspection_title). -->
+
+    <!-- Línea de antigüedad de la caché: "Plantillas actualizadas hoy, 09:14" -->
+    <string name="new_inspection_templates_age">Plantillas actualizadas %1$s</string>
+    <string name="new_inspection_templates_age_offline">Plantillas actualizadas %1$s. Se van a actualizar cuando haya conexión.</string>
+    <string name="new_inspection_age_today">hoy, %1$s</string>
+    <string name="new_inspection_age_yesterday">ayer, %1$s</string>
+    <plurals name="new_inspection_age_days">
+        <item quantity="one">hace %1$d día</item>
+        <item quantity="other">hace %1$d días</item>
+    </plurals>
+
+    <!-- Tarjeta y hoja inferior: "20 ítems · versión 3" -->
+    <plurals name="new_inspection_template_details">
+        <item quantity="one">%1$d ítem · versión %2$d</item>
+        <item quantity="other">%1$d ítems · versión %2$d</item>
+    </plurals>
+
+    <!-- Hoja inferior -->
+    <string name="new_inspection_site_label">Sitio *</string>
+    <string name="new_inspection_site_placeholder">Ej.: Obra Av. Siempreviva 742 — Subsuelo 2</string>
+    <string name="new_inspection_site_required">Obligatorio</string>
+    <string name="new_inspection_start">Empezar inspección</string>
+    <string name="new_inspection_creating">Creando inspección</string>
+
+    <!-- Estados -->
+    <string name="new_inspection_loading">Descargando plantillas…</string>
+    <string name="new_inspection_empty_offline_title">Necesitás conexión la primera vez</string>
+    <string name="new_inspection_empty_offline_description">Las plantillas se descargan una sola vez y después funcionan sin señal.</string>
+    <string name="new_inspection_empty_title">No hay plantillas disponibles</string>
+    <string name="new_inspection_empty_description">Pedile al responsable que cargue una plantilla.</string>
+</resources>

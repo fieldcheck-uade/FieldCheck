@@ -76,6 +76,9 @@ dependencies {
 
     implementation(libs.kotlinx.coroutines.android)
 
+    // Coil: muestra las fotos de evidencia guardadas en el teléfono
+    implementation(libs.coil.compose)
+
     // Tests unitarios (JVM, sin emulador)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

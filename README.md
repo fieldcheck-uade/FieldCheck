@@ -8,7 +8,7 @@ Trabajo Práctico Obligatorio de **Desarrollo de Aplicaciones I** (UADE).
 >
 > La implementación comienza en la Etapa 2, una vez aprobada la preentrega. Un prototipo exploratorio que se hizo para validar la arquitectura propuesta se conserva en la rama [`prototipo/arquitectura`](https://github.com/fieldcheck-uade/FieldCheck/tree/prototipo/arquitectura).
 >
-> El esqueleto de la app ya está armado con MVVM + Clean Architecture + Hilt, con la pantalla de Historial (P1) funcionando de punta a punta como ejemplo de referencia.
+> La app ya tiene implementadas las cinco pantallas del Figma (P1 a P5) con MVVM + Clean Architecture + Hilt. Falta la sincronización con el backend.
 
 ---
 
@@ -34,7 +34,7 @@ Detalle completo en [`docs/preentrega.md`](docs/preentrega.md).
 
 1. Abrir la carpeta del repo en Android Studio (necesita JDK 17 o superior y el SDK de Android 37).
 2. Esperar la sincronización de Gradle y ejecutar la configuración `app` en un emulador o teléfono con Android 8.0 (API 26) o superior.
-3. La primera vez se cargan tres inspecciones de ejemplo para ver el Historial con datos. Es temporal, hasta que exista la pantalla "Nueva inspección".
+3. La primera vez se cargan cuatro plantillas locales (simulan la descarga desde la API, que todavía no existe). Con ellas se puede crear una inspección desde "Nueva inspección".
 
 Desde la terminal:
 
@@ -91,14 +91,18 @@ app/src/main/java/ar/edu/uade/fieldcheck/
 └── presentation/
     ├── FieldCheckApp.kt       NavHost con el grafo de navegación
     ├── common/components/     componentes compartidos (SyncChip, estados vacío/error/carga)
-    └── history/               P1: HistoryScreen, HistoryViewModel y sus componentes
+    ├── history/               P1 · Historial
+    ├── newinspection/         P2 · Nueva inspección
+    ├── execution/             P3 · Ejecución de la inspección (cámara incluida)
+    ├── review/                P4 · Revisión y finalización
+    └── detail/                P5 · Detalle y compartir resumen
 app/src/test/                  tests unitarios con repositorio falso (sin emulador)
 backend/                       API FastAPI (etapa de implementación)
 docs/                          documentación de la preentrega
     diseno/                    wireframes, mockups y estados de pantalla
 ```
 
-Las pantallas P2 a P5, la sincronización (`data/remote`, `data/sync`) y el monitor de red se suman en las próximas entregas siguiendo el mismo patrón.
+La sincronización con el backend (`data/remote`, `data/sync`) y la ubicación de las fotos se suman en las próximas entregas siguiendo el mismo patrón.
 
 **Cómo agregar una pantalla nueva**
 
@@ -131,10 +135,10 @@ Justificación de cada una en `docs/preentrega.md`, punto 15.
 
 | Requisito | Descripción | Estado |
 |---|---|---|
-| RF01 | Crear una inspección a partir de una plantilla (plantillas cacheadas) | Pendiente |
-| RF02 | Completar ítems con resultado, nota y foto, sin conexión | Pendiente |
+| RF01 | Crear una inspección a partir de una plantilla (plantillas cacheadas) | Listo (plantillas locales hasta tener API) |
+| RF02 | Completar ítems con resultado, nota y foto, sin conexión | Listo |
 | RF03 | Sincronización automática con estado visible y reintento | Pendiente |
-| RF04 | Historial, detalle y compartir resumen | En curso (historial listo) |
+| RF04 | Historial, detalle y compartir resumen | Listo |
 
 ## Decisiones relevantes
 
