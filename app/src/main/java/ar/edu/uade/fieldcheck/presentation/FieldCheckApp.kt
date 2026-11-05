@@ -1,6 +1,12 @@
 package ar.edu.uade.fieldcheck.presentation
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -29,6 +35,11 @@ fun FieldCheckApp() {
     NavHost(
         navController = navController,
         startDestination = Screen.History,
+        // Transiciones tipo "slide" para todas las pantallas (ver funciones al final del archivo).
+        enterTransition = { slideInFromRight() },
+        exitTransition = { slideOutToLeft() },
+        popEnterTransition = { slideInFromLeft() },
+        popExitTransition = { slideOutToRight() },
     ) {
         composable<Screen.History> {
             HistoryRoute(
@@ -111,4 +122,45 @@ private fun openInspection(navController: NavHostController, inspection: Inspect
     } else {
         navController.navigate(Screen.Execution(inspectionId = inspection.clientUuid))
     }
+}
+
+// ----- Transiciones entre pantallas -----
+//
+// Al avanzar, la pantalla nueva entra desde la derecha y la anterior se va hacia la izquierda.
+// Al volver ("atrás"), es al revés: la pantalla anterior entra desde la izquierda y la actual
+// sale hacia la derecha. Así el usuario "ve" en qué dirección se mueve dentro de la app.
+
+/** Duración de cada transición, en milisegundos. */
+private const val TRANSITION_DURATION_MILLIS = 300
+
+/** Avanzar: la pantalla nueva entra desde la derecha. */
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.slideInFromRight(): EnterTransition {
+    return slideIntoContainer(
+        towards = SlideDirection.Start,
+        animationSpec = tween(durationMillis = TRANSITION_DURATION_MILLIS),
+    )
+}
+
+/** Avanzar: la pantalla actual se va hacia la izquierda. */
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.slideOutToLeft(): ExitTransition {
+    return slideOutOfContainer(
+        towards = SlideDirection.Start,
+        animationSpec = tween(durationMillis = TRANSITION_DURATION_MILLIS),
+    )
+}
+
+/** Volver: la pantalla anterior entra desde la izquierda. */
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.slideInFromLeft(): EnterTransition {
+    return slideIntoContainer(
+        towards = SlideDirection.End,
+        animationSpec = tween(durationMillis = TRANSITION_DURATION_MILLIS),
+    )
+}
+
+/** Volver: la pantalla actual sale hacia la derecha. */
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.slideOutToRight(): ExitTransition {
+    return slideOutOfContainer(
+        towards = SlideDirection.End,
+        animationSpec = tween(durationMillis = TRANSITION_DURATION_MILLIS),
+    )
 }
