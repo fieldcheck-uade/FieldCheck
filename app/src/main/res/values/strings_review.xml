@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- P4 · Revisión y finalización -->
+    <string name="review_finalize_button">Finalizar inspección</string>
+    <string name="review_missing_hint">Tocá cada uno para completarlo.</string>
+    <string name="review_missing_section">Ítems faltantes</string>
+    <string name="review_problem_without_result">Sin completar</string>
+    <string name="review_problem_not_complies_without_evidence">No cumple sin evidencia</string>
+    <string name="review_item_has_photos">Tiene fotos</string>
+    <string name="review_item_number">Ítem %1$d</string>
+    <string name="review_edit_item_action">Editar el ítem %1$d</string>
+
+    <!-- Diálogo de confirmación -->
+    <string name="review_confirm_title">¿Finalizar la inspección?</string>
+    <string name="review_confirm_message">Después no se va a poder editar.</string>
+    <string name="review_confirm_accept">Finalizar</string>
+    <string name="review_confirm_cancel">Cancelar</string>
+</resources>
