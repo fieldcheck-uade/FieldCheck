@@ -7,6 +7,8 @@ Trabajo Práctico Obligatorio de **Desarrollo de Aplicaciones I** (UADE).
 > **Estado actual:** Etapa 1, preentrega de análisis y diseño (entrega 09/10/2026). Toda la documentación está en [`docs/preentrega.md`](docs/preentrega.md).
 >
 > La implementación comienza en la Etapa 2, una vez aprobada la preentrega. Un prototipo exploratorio que se hizo para validar la arquitectura propuesta se conserva en la rama [`prototipo/arquitectura`](https://github.com/fieldcheck-uade/FieldCheck/tree/prototipo/arquitectura).
+>
+> El esqueleto de la app ya está armado con MVVM + Clean Architecture + Hilt, con la pantalla de Historial (P1) funcionando de punta a punta como ejemplo de referencia.
 
 ---
 
@@ -28,39 +30,83 @@ Detalle completo en [`docs/preentrega.md`](docs/preentrega.md).
 
 ## Instrucciones de ejecución
 
-_Se completan en la Etapa 2._ La app se va a abrir y ejecutar desde Android Studio (Android 8.0, API 26, o superior) y el backend se va a levantar con `docker compose up` desde `backend/`.
+**App Android**
+
+1. Abrir la carpeta del repo en Android Studio (necesita JDK 17 o superior y el SDK de Android 37).
+2. Esperar la sincronización de Gradle y ejecutar la configuración `app` en un emulador o teléfono con Android 8.0 (API 26) o superior.
+3. La primera vez se cargan tres inspecciones de ejemplo para ver el Historial con datos. Es temporal, hasta que exista la pantalla "Nueva inspección".
+
+Desde la terminal:
+
+```bash
+./gradlew assembleDebug        # compila la app
+./gradlew testDebugUnitTest    # corre los tests unitarios (sin emulador)
+```
+
+El backend se va a levantar con `docker compose up` desde `backend/` (_se completa en la Etapa 2_).
 
 ## Arquitectura
 
-MVVM con principios de Clean Architecture, en un único módulo `app` organizado en paquetes por capa (estructura prevista para la Etapa 2):
+**MVVM + Clean Architecture**, con inyección de dependencias con **Hilt** y UI en **Jetpack Compose**. Toma como referencia la arquitectura de [PokedexAcademy-MVVM-Clean](https://github.com/ExBattou/PokedexAcademy-MVVM-Clean), vista en clase.
 
 ```
-UI (Compose) → ViewModel → Caso de uso → Repositorio (interfaz) → Room / Retrofit
+Pantalla (Compose) → ViewModel → Caso de uso → Repositorio (interfaz) → Room / Retrofit
+     ↑ UiState (StateFlow)          ↑ Resource (Success / Error)
 ```
+
+| Capa | Qué hace | Qué NO hace |
+|---|---|---|
+| **Presentation** | Dibuja la pantalla (Compose) y guarda su estado (ViewModel). | No sabe de dónde vienen los datos. |
+| **Domain** | Modelos, reglas de negocio (casos de uso) e interfaces de repositorio. Kotlin puro. | No importa nada de Android, Room ni Retrofit. |
+| **Data** | Implementa los repositorios con Room (y más adelante Retrofit). Convierte entidades a modelos con mappers. | No tiene reglas de negocio. |
+| **DI** | Módulos de Hilt que conectan cada interfaz con su implementación. | — |
+
+**Cómo viaja un dato (ejemplo: Historial, P1)**
+
+1. Room emite la lista de inspecciones como `Flow` (`InspectionDao`).
+2. `InspectionRepositoryImpl` la convierte a modelos de dominio y la envuelve en `Resource.Success`. Si la base falla, emite `Resource.Error` con un mensaje entendible.
+3. `GetInspectionHistoryUseCase` aplica la regla de negocio: separa "En curso" de "Finalizadas" y las ordena.
+4. `HistoryViewModel` lo traduce a `UiState` (`Loading`, `Success` o `Error`) y lo expone en un `StateFlow`.
+5. `HistoryScreen` dibuja cada estado. Los mensajes de una sola vez (snackbars) viajan aparte, por un `SharedFlow`, para que no se repitan al rotar la pantalla.
+
+**Estructura de paquetes**
 
 ```
 app/src/main/java/ar/edu/uade/fieldcheck/
-├── presentation/          UI y estado de pantalla
-│   ├── navigation/        rutas y NavHost
-│   ├── theme/             colores, tipografía
-│   ├── components/        componentes compartidos (banner offline, chips, etc.)
-│   └── history/ newinspection/ execution/ review/ detail/   una carpeta por pantalla (P1..P5)
-├── domain/                Kotlin puro, sin Android
-│   ├── model/             modelos de dominio
-│   ├── repository/        interfaces de repositorio
-│   └── usecase/           casos de uso con reglas de negocio
+├── FieldCheckApplication.kt   @HiltAndroidApp: arranca Hilt
+├── MainActivity.kt            @AndroidEntryPoint: única Activity, contiene la UI Compose
+├── core/                      lo compartido por todas las capas
+│   ├── model/                 Resource (resultado de Data) y UiState (estado de pantalla)
+│   ├── navigation/            rutas tipadas (Screen)
+│   └── theme/                 colores, tipografía y formas (docs/pantallas.md)
+├── domain/                    Kotlin puro, sin Android
+│   ├── model/                 Inspection, InspectionHistory
+│   ├── repository/            interfaces (contratos) de repositorio
+│   └── usecase/               casos de uso con reglas de negocio
 ├── data/
-│   ├── local/             Room (database, dao, entity) y archivos de fotos
-│   ├── remote/            Retrofit (api, dto)
-│   ├── repository/        implementaciones de repositorio
-│   ├── mapper/            Entity ↔ Dominio ↔ DTO
-│   ├── sync/              SyncWorker (WorkManager)
-│   └── connectivity/      monitor de red como Flow
-└── di/                    AppContainer (inyección manual)
-backend/                   API FastAPI (etapa de implementación)
-docs/                      documentación de la preentrega
-    diseno/                wireframes, mockups y estados de pantalla
+│   ├── local/                 Room: database, dao, entity
+│   ├── mapper/                Entity → Dominio
+│   └── repository/            implementaciones de los repositorios
+├── di/                        módulos de Hilt (DatabaseModule, RepositoryModule)
+└── presentation/
+    ├── FieldCheckApp.kt       NavHost con el grafo de navegación
+    ├── common/components/     componentes compartidos (SyncChip, estados vacío/error/carga)
+    └── history/               P1: HistoryScreen, HistoryViewModel y sus componentes
+app/src/test/                  tests unitarios con repositorio falso (sin emulador)
+backend/                       API FastAPI (etapa de implementación)
+docs/                          documentación de la preentrega
+    diseno/                    wireframes, mockups y estados de pantalla
 ```
+
+Las pantallas P2 a P5, la sincronización (`data/remote`, `data/sync`) y el monitor de red se suman en las próximas entregas siguiendo el mismo patrón.
+
+**Cómo agregar una pantalla nueva**
+
+1. Si hace falta, el modelo en `domain/model` y el método en la interfaz del repositorio.
+2. Un caso de uso en `domain/usecase` con la regla de negocio.
+3. La implementación en `data/repository` (Hilt ya la conoce por `RepositoryModule`).
+4. Un `XxxViewModel` con `@HiltViewModel` que exponga `StateFlow<UiState<...>>`.
+5. Un `XxxRoute` (se conecta al ViewModel) y un `XxxScreen` (solo dibuja), y la ruta en `Screen` + `FieldCheckApp`.
 
 Estrategia **offline first**: Room es la única fuente de verdad de la UI; las inspecciones se guardan localmente y WorkManager las sincroniza al haber red, de forma idempotente por `clientUuid`. Explicación completa en `docs/preentrega.md` (punto 14) y `docs/diagramas.md`.
 
@@ -70,6 +116,7 @@ Estrategia **offline first**: Room es la única fuente de verdad de la UI; las i
 |---|---|
 | Lenguaje y UI | Kotlin 2.4, Jetpack Compose (BOM 2026.09), Material 3 |
 | Navegación y estado | Navigation Compose (rutas tipadas), ViewModel, StateFlow, Coroutines |
+| Inyección de dependencias | Hilt (Dagger) |
 | Persistencia | Room 2.8 (KSP) |
 | Red | Retrofit 3, OkHttp 5, kotlinx.serialization |
 | Segundo plano | WorkManager |
@@ -87,7 +134,7 @@ Justificación de cada una en `docs/preentrega.md`, punto 15.
 | RF01 | Crear una inspección a partir de una plantilla (plantillas cacheadas) | Pendiente |
 | RF02 | Completar ítems con resultado, nota y foto, sin conexión | Pendiente |
 | RF03 | Sincronización automática con estado visible y reintento | Pendiente |
-| RF04 | Historial, detalle y compartir resumen | Pendiente |
+| RF04 | Historial, detalle y compartir resumen | En curso (historial listo) |
 
 ## Decisiones relevantes
 
@@ -95,7 +142,8 @@ Justificación de cada una en `docs/preentrega.md`, punto 15.
 - **Sincronización al finalizar:** una inspección finalizada es de solo lectura, lo que casi elimina los conflictos; ante un conflicto, el servidor aplica *last-write-wins*.
 - **Idempotencia por `clientUuid`:** reintentar un envío nunca duplica datos en el servidor.
 - **Cámara del sistema en lugar de CameraX:** menos código y sin pedir el permiso `CAMERA`.
-- **Inyección de dependencias manual:** sin Hilt ni Koin, para un proyecto de este tamaño.
+- **Inyección de dependencias con Hilt:** reemplaza la inyección manual planteada en la preentrega, para alinearse con la arquitectura vista en clase. Hilt crea cada dependencia una sola vez y la entrega a ViewModels y repositorios, sin armar a mano un contenedor.
+- **Casos de uso entre ViewModel y repositorio:** los ViewModels hablan solo con casos de uso, como en la arquitectura de referencia. Cada caso de uso tiene una regla concreta (por ejemplo, separar y ordenar el historial), así que no son capas vacías.
 
 ## Limitaciones conocidas
 
