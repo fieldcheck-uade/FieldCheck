@@ -1,60 +1,54 @@
 package ar.edu.uade.fieldcheck.presentation.newinspection
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
-import ar.edu.uade.fieldcheck.R
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 /**
- * Contenedor de la pantalla P2 · Nueva inspección.
+ * Contenedor de la pantalla P2 (patrón container / presentational).
  *
- * TEMPORAL: pantalla en construcción. La reemplaza la implementación real de P2,
- * que mantiene esta misma firma para no tocar la navegación (`FieldCheckApp`).
+ * Se conecta con el [NewInspectionViewModel]: lee el estado, se lo pasa a [NewInspectionScreen]
+ * y escucha los eventos de una sola vez (inspección creada) para navegar.
+ *
+ * @param onInspectionStarted recibe el id de la inspección nueva; `FieldCheckApp` abre la
+ *   ejecución (P3) y saca a P2 de la pila.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NewInspectionRoute(
     onBackClick: () -> Unit,
     onInspectionStarted: (inspectionId: String) -> Unit,
 ) {
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(text = stringResource(R.string.new_inspection_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.action_back),
-                        )
-                    }
-                },
-            )
-        },
-    ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = stringResource(R.string.under_construction),
-                style = MaterialTheme.typography.titleMedium,
-            )
+    val viewModel: NewInspectionViewModel = hiltViewModel()
+    val templatesState by viewModel.templatesState.collectAsStateWithLifecycle()
+    val isOnline by viewModel.isOnline.collectAsStateWithLifecycle()
+    val startSheetState by viewModel.startSheetState.collectAsStateWithLifecycle()
+
+    // Si la pantalla se recompone con otro callback, el efecto usa siempre el más reciente
+    // sin tener que volver a suscribirse a los eventos.
+    val currentOnInspectionStarted by rememberUpdatedState(onInspectionStarted)
+
+    LaunchedEffect(viewModel) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is NewInspectionEvent.InspectionStarted -> {
+                    currentOnInspectionStarted(event.inspectionId)
+                }
+            }
         }
     }
+
+    NewInspectionScreen(
+        templatesState = templatesState,
+        isOnline = isOnline,
+        startSheetState = startSheetState,
+        onBackClick = onBackClick,
+        onRetryClick = viewModel::loadTemplates,
+        onTemplateClick = viewModel::onTemplateSelected,
+        onSiteNameChange = viewModel::onSiteNameChange,
+        onStartInspectionClick = viewModel::onStartInspectionClick,
+        onSheetDismiss = viewModel::onSheetDismissed,
+    )
 }
