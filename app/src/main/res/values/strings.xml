@@ -21,7 +21,6 @@
     <!-- Componentes compartidos -->
     <string name="offline_banner">Sin conexión. Tus cambios se guardan en el teléfono.</string>
     <string name="evidence_location_badge">Con ubicación</string>
-    <string name="under_construction">En construcción</string>
 
     <!-- P1 · Historial -->
     <string name="history_new_inspection">Nueva inspección</string>
@@ -35,7 +34,6 @@
 
     <!-- Títulos de las pantallas en construcción -->
     <string name="new_inspection_title">Nueva inspección</string>
-    <string name="execution_title">Ejecución</string>
     <string name="review_title">Revisión</string>
     <string name="detail_title">Detalle</string>
 </resources>
