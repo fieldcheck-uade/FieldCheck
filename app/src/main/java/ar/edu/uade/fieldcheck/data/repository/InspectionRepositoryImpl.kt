@@ -18,6 +18,8 @@ import ar.edu.uade.fieldcheck.domain.model.Template
 import ar.edu.uade.fieldcheck.domain.repository.InspectionRepository
 import ar.edu.uade.fieldcheck.domain.repository.PhotoStorage
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
@@ -226,7 +228,13 @@ class InspectionRepositoryImpl @Inject constructor(
         operation: suspend () -> Resource<T>,
     ): Resource<T> {
         try {
-            return operation()
+            // NonCancellable: una escritura que ya empezó termina aunque el usuario salga de
+            // la pantalla (por ejemplo, la última nota escrita en P3 al tocar "atrás").
+            // Sin esto, cerrar el ViewModel cancelaría el guardado a mitad de camino.
+            val result = withContext(NonCancellable) {
+                operation()
+            }
+            return result
         } catch (exception: CancellationException) {
             throw exception
         } catch (exception: Exception) {
