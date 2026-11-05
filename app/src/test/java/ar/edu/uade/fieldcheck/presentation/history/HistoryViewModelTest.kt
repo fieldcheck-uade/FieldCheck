@@ -1,12 +1,13 @@
 package ar.edu.uade.fieldcheck.presentation.history
 
-import app.cash.turbine.test
 import ar.edu.uade.fieldcheck.core.model.Resource
 import ar.edu.uade.fieldcheck.core.model.UiState
 import ar.edu.uade.fieldcheck.domain.model.InspectionHistory
 import ar.edu.uade.fieldcheck.domain.model.InspectionStatus
 import ar.edu.uade.fieldcheck.domain.usecase.GetInspectionHistoryUseCase
+import ar.edu.uade.fieldcheck.domain.usecase.ObserveConnectivityUseCase
 import ar.edu.uade.fieldcheck.fakes.FakeInspectionRepository
+import ar.edu.uade.fieldcheck.fakes.FakeNetworkMonitor
 import ar.edu.uade.fieldcheck.fakes.createTestInspection
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -16,6 +17,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -82,45 +84,30 @@ class HistoryViewModelTest {
     }
 
     @Test
-    fun `tapping new inspection emits a one-shot snackbar`() = runTest {
+    fun `starts online so the banner does not flash`() = runTest {
         val viewModel = createViewModel(FakeInspectionRepository())
 
-        viewModel.effects.test {
-            viewModel.onNewInspectionClick()
-
-            val effect = awaitItem()
-            assertTrue(effect is HistoryUiEffect.ShowSnackbar)
-        }
+        assertTrue(viewModel.isOnline.value)
     }
 
     @Test
-    fun `tapping a finished inspection mentions the detail screen`() = runTest {
-        val viewModel = createViewModel(FakeInspectionRepository())
-        val finished = createTestInspection("done", status = InspectionStatus.FINISHED, finishedAt = 2_000L)
+    fun `reports offline and back online when the connection changes`() = runTest {
+        val networkMonitor = FakeNetworkMonitor(initiallyOnline = true)
+        val viewModel = createViewModel(FakeInspectionRepository(), networkMonitor)
 
-        viewModel.effects.test {
-            viewModel.onInspectionClick(finished)
+        networkMonitor.setOnline(false)
+        assertFalse(viewModel.isOnline.value)
 
-            val effect = awaitItem() as HistoryUiEffect.ShowSnackbar
-            assertTrue(effect.message.contains("el detalle"))
-        }
+        networkMonitor.setOnline(true)
+        assertTrue(viewModel.isOnline.value)
     }
 
-    @Test
-    fun `tapping an in progress inspection mentions the execution screen`() = runTest {
-        val viewModel = createViewModel(FakeInspectionRepository())
-        val inProgress = createTestInspection("doing", status = InspectionStatus.IN_PROGRESS)
-
-        viewModel.effects.test {
-            viewModel.onInspectionClick(inProgress)
-
-            val effect = awaitItem() as HistoryUiEffect.ShowSnackbar
-            assertTrue(effect.message.contains("la ejecución"))
-        }
-    }
-
-    private fun createViewModel(repository: FakeInspectionRepository): HistoryViewModel {
-        val useCase = GetInspectionHistoryUseCase(repository)
-        return HistoryViewModel(useCase)
+    private fun createViewModel(
+        repository: FakeInspectionRepository,
+        networkMonitor: FakeNetworkMonitor = FakeNetworkMonitor(),
+    ): HistoryViewModel {
+        val getInspectionHistory = GetInspectionHistoryUseCase(repository)
+        val observeConnectivity = ObserveConnectivityUseCase(networkMonitor)
+        return HistoryViewModel(getInspectionHistory, observeConnectivity)
     }
 }
