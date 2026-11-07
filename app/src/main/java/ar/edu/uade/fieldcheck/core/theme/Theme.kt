@@ -1,6 +1,5 @@
 package ar.edu.uade.fieldcheck.core.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -93,10 +92,12 @@ private val DarkColors = darkColorScheme(
 
 val LocalStatusColors = staticCompositionLocalOf { LightStatusColors }
 
-// Sin color dinámico a propósito: los colores de estado tienen que ser siempre los mismos
+// Sin color dinámico a propósito: los colores de estado tienen que ser siempre los mismos.
+// No sigue al tema del sistema: arranca en claro y el usuario elige con el botón de la barra
+// superior (la preferencia la guarda ThemeViewModel).
 @Composable
 fun FieldCheckTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val statusColors = if (darkTheme) DarkStatusColors else LightStatusColors

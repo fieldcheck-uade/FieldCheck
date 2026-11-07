@@ -3,6 +3,8 @@
 
     <!-- Acciones comunes -->
     <string name="action_retry">Reintentar</string>
+    <string name="action_enable_dark_mode">Activar modo oscuro</string>
+    <string name="action_enable_light_mode">Activar modo claro</string>
 
     <!-- Estado de sincronización -->
     <string name="sync_pending">Pendiente</string>

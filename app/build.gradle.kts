@@ -74,6 +74,9 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
 
+    // DataStore: preferencias del usuario (modo oscuro)
+    implementation(libs.androidx.datastore.preferences)
+
     implementation(libs.kotlinx.coroutines.android)
 
     // Tests unitarios (JVM, sin emulador)
