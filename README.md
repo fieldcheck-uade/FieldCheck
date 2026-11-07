@@ -84,13 +84,14 @@ app/src/main/java/ar/edu/uade/fieldcheck/
 │   ├── repository/            interfaces (contratos) de repositorio
 │   └── usecase/               casos de uso con reglas de negocio
 ├── data/
-│   ├── local/                 Room: database, dao, entity
+│   ├── local/                 Room: database, dao, entity (preferencias en DataStore)
 │   ├── mapper/                Entity → Dominio
 │   └── repository/            implementaciones de los repositorios
-├── di/                        módulos de Hilt (DatabaseModule, RepositoryModule)
+├── di/                        módulos de Hilt (DatabaseModule, DataStoreModule, RepositoryModule)
 └── presentation/
     ├── FieldCheckApp.kt       NavHost con el grafo de navegación
-    ├── common/components/     componentes compartidos (SyncChip, estados vacío/error/carga)
+    ├── ThemeViewModel.kt      modo claro / oscuro de toda la app (guardado en DataStore)
+    ├── common/components/     componentes compartidos (SyncChip, botón de modo oscuro, estados vacío/error/carga)
     └── history/               P1: HistoryScreen, HistoryViewModel y sus componentes
 app/src/test/                  tests unitarios con repositorio falso (sin emulador)
 backend/                       API FastAPI (etapa de implementación)
@@ -117,7 +118,7 @@ Estrategia **offline first**: Room es la única fuente de verdad de la UI; las i
 | Lenguaje y UI | Kotlin 2.4, Jetpack Compose (BOM 2026.09), Material 3 |
 | Navegación y estado | Navigation Compose (rutas tipadas), ViewModel, StateFlow, Coroutines |
 | Inyección de dependencias | Hilt (Dagger) |
-| Persistencia | Room 2.8 (KSP) |
+| Persistencia | Room 2.8 (KSP); DataStore Preferences para las preferencias del usuario (modo oscuro) |
 | Red | Retrofit 3, OkHttp 5, kotlinx.serialization |
 | Segundo plano | WorkManager |
 | Dispositivo | Cámara del sistema (`TakePicture` + `FileProvider`), ubicación (Fused Location, opcional), hoja de compartir |
