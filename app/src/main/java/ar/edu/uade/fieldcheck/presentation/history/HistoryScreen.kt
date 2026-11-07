@@ -37,6 +37,7 @@ import ar.edu.uade.fieldcheck.domain.model.Inspection
 import ar.edu.uade.fieldcheck.domain.model.InspectionHistory
 import ar.edu.uade.fieldcheck.domain.model.InspectionStatus
 import ar.edu.uade.fieldcheck.domain.model.SyncStatus
+import ar.edu.uade.fieldcheck.presentation.common.components.DarkModeToggleButton
 import ar.edu.uade.fieldcheck.presentation.common.components.EmptyState
 import ar.edu.uade.fieldcheck.presentation.common.components.ErrorState
 import ar.edu.uade.fieldcheck.presentation.common.components.LoadingState
@@ -50,6 +51,8 @@ import ar.edu.uade.fieldcheck.presentation.history.components.InspectionCard
  */
 @Composable
 fun HistoryRoute(
+    isDarkMode: Boolean,
+    onDarkModeChange: (Boolean) -> Unit,
     viewModel: HistoryViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -69,6 +72,8 @@ fun HistoryRoute(
     HistoryScreen(
         uiState = uiState,
         snackbarHostState = snackbarHostState,
+        isDarkMode = isDarkMode,
+        onDarkModeChange = onDarkModeChange,
         onNewInspectionClick = viewModel::onNewInspectionClick,
         onInspectionClick = viewModel::onInspectionClick,
         onRetryClick = viewModel::loadHistory,
@@ -84,13 +89,23 @@ fun HistoryRoute(
 fun HistoryScreen(
     uiState: UiState<InspectionHistory>,
     snackbarHostState: SnackbarHostState,
+    isDarkMode: Boolean,
+    onDarkModeChange: (Boolean) -> Unit,
     onNewInspectionClick: () -> Unit,
     onInspectionClick: (Inspection) -> Unit,
     onRetryClick: () -> Unit,
 ) {
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text(text = stringResource(R.string.app_name)) })
+            TopAppBar(
+                title = { Text(text = stringResource(R.string.app_name)) },
+                actions = {
+                    DarkModeToggleButton(
+                        isDarkMode = isDarkMode,
+                        onDarkModeChange = onDarkModeChange,
+                    )
+                },
+            )
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
@@ -235,6 +250,33 @@ private fun HistoryScreenContentPreview() {
         HistoryScreen(
             uiState = UiState.Success(history),
             snackbarHostState = remember { SnackbarHostState() },
+            isDarkMode = false,
+            onDarkModeChange = {},
+            onNewInspectionClick = {},
+            onInspectionClick = {},
+            onRetryClick = {},
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Modo oscuro")
+@Composable
+private fun HistoryScreenDarkPreview() {
+    val history = InspectionHistory(
+        inProgress = listOf(
+            previewInspection("1", "Planta Norte · Sala de bombas", InspectionStatus.IN_PROGRESS, SyncStatus.PENDING, 3),
+        ),
+        finished = listOf(
+            previewInspection("2", "Obra Belgrano · Piso 3", InspectionStatus.FINISHED, SyncStatus.SYNCED, 8),
+            previewInspection("3", "Depósito Sur · Tablero", InspectionStatus.FINISHED, SyncStatus.FAILED, 8),
+        ),
+    )
+    FieldCheckTheme(darkTheme = true) {
+        HistoryScreen(
+            uiState = UiState.Success(history),
+            snackbarHostState = remember { SnackbarHostState() },
+            isDarkMode = true,
+            onDarkModeChange = {},
             onNewInspectionClick = {},
             onInspectionClick = {},
             onRetryClick = {},
@@ -250,6 +292,8 @@ private fun HistoryScreenEmptyPreview() {
         HistoryScreen(
             uiState = UiState.Success(emptyHistory),
             snackbarHostState = remember { SnackbarHostState() },
+            isDarkMode = false,
+            onDarkModeChange = {},
             onNewInspectionClick = {},
             onInspectionClick = {},
             onRetryClick = {},
@@ -264,6 +308,8 @@ private fun HistoryScreenErrorPreview() {
         HistoryScreen(
             uiState = UiState.Error("No pudimos leer las inspecciones guardadas."),
             snackbarHostState = remember { SnackbarHostState() },
+            isDarkMode = false,
+            onDarkModeChange = {},
             onNewInspectionClick = {},
             onInspectionClick = {},
             onRetryClick = {},
