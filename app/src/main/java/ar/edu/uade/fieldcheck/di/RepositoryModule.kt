@@ -1,7 +1,9 @@
 package ar.edu.uade.fieldcheck.di
 
 import ar.edu.uade.fieldcheck.data.repository.InspectionRepositoryImpl
+import ar.edu.uade.fieldcheck.data.repository.SettingsRepositoryImpl
 import ar.edu.uade.fieldcheck.domain.repository.InspectionRepository
+import ar.edu.uade.fieldcheck.domain.repository.SettingsRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -24,4 +26,10 @@ abstract class RepositoryModule {
     abstract fun bindInspectionRepository(
         implementation: InspectionRepositoryImpl,
     ): InspectionRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindSettingsRepository(
+        implementation: SettingsRepositoryImpl,
+    ): SettingsRepository
 }
