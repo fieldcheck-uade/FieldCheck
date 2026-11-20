@@ -52,7 +52,7 @@ Cada pantalla contempla los estados que pide la consigna (7.3): **carga** (esque
 | RNF04 Recuperación ante errores | ✅ Todo error visible dice qué pasó y ofrece una acción ("Reintentar"). Los errores de red no cierran la app. |
 | RNF05 Uso con una mano | ✅ Las acciones principales están en la zona del pulgar, un toque por resultado y se retoma en el primer ítem sin completar. |
 | RNF06 Accesibilidad | ⚠️ Implementado: íconos con descripción, estado con ícono + texto, áreas táctiles de 48 dp. **Falta** la pasada con Accessibility Scanner y TalkBack. |
-| RNF07 Fotos redimensionadas | ❌ Pendiente: las fotos se suben con la resolución de la cámara. Ver [Limitaciones](#limitaciones-conocidas). |
+| RNF07 Fotos redimensionadas | ✅ Al guardarla, cada foto se reduce a 1600 px de lado mayor (JPEG calidad 80), respetando la orientación. Verificado en el emulador: una foto de 1440 × 1920 se guarda y se sube en 1200 × 1600. |
 | RNF08 Privacidad y seguridad | ✅ Las fotos quedan en el almacenamiento interno, sin permisos de almacenamiento ni backup automático. La API key está fuera del código y el log de red existe solo en debug. |
 | RNF09 Batería | ✅ La sincronización corre solo con red. La ubicación no se implementó, así que no se usan sensores. |
 | RNF10 Compatibilidad | ⚠️ `minSdk 26`. Probado en un emulador con la última API; **falta** probar en API 26. |
@@ -96,7 +96,7 @@ En debug, la app solo permite HTTP sin cifrar hacia `10.0.2.2` y `localhost` (`a
 ### 3. Tests
 
 ```bash
-./gradlew testDebugUnitTest            # app: 147 tests unitarios, sin emulador
+./gradlew testDebugUnitTest            # app: 152 tests unitarios, sin emulador
 cd backend && python -m pytest         # backend: 15 tests (ver backend/README.md)
 ```
 
@@ -218,6 +218,7 @@ Justificación de cada decisión y alternativas descartadas en `docs/preentrega.
 - **Fotos marcadas de a una:** cada foto subida se marca como sincronizada, así un corte a mitad de la subida no obliga a mandar todas otra vez.
 - **Regla de finalización en el dominio:** "No cumple" exige nota o foto, y se valida en el caso de uso, no en la pantalla. Así la regla no depende de por dónde se llegue a finalizar.
 - **Cámara del sistema en lugar de CameraX:** menos código y sin pedir el permiso `CAMERA`.
+- **Fotos reducidas al guardarlas, no al subirlas:** la foto se achica una sola vez, apenas vuelve de la cámara. Así ocupa menos lugar en el teléfono y cada reintento de subida manda el archivo chico. La regla está en `AddEvidenceUseCase`, y el procesamiento de la imagen (decodificar submuestreada, escalar, girar según el EXIF) en `EvidenceFileStore`.
 - **API key fuera del código:** se lee de `local.properties` en tiempo de compilación (`BuildConfig`) y el log de red la oculta.
 - **Migración de Room 1 → 2:** se agregó `templateVersion` a las inspecciones (la pide la API) con una migración en lugar de borrar la base, para no perder inspecciones guardadas.
 - **Casos de uso entre ViewModel y repositorio:** los ViewModels hablan solo con casos de uso, como en la arquitectura de referencia. Cada caso de uso tiene una regla concreta, así que no son capas vacías.
@@ -238,7 +239,6 @@ La consigna permite cambios durante el desarrollo siempre que se puedan justific
 
 ## Limitaciones conocidas
 
-- **Fotos sin redimensionar (RNF07 pendiente):** se suben con la resolución de la cámara. En teléfonos reales una foto puede pesar varios MB y tardar con señal débil. El servidor acepta hasta 10 MB por foto.
 - **Sin ubicación en las fotos:** el geoetiquetado (deseable) quedó afuera.
 - **Sin login ni multiusuario:** la app se autentica ante la API con una sola API key compartida.
 - **Solo para desarrollo:** no hay una URL de producción con HTTPS ni firma de release. La app de debug habla HTTP solo con el backend local.

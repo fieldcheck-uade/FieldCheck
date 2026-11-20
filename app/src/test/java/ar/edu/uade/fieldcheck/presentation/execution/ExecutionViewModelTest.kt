@@ -441,7 +441,7 @@ class ExecutionViewModelTest {
             getInspectionDetail = GetInspectionDetailUseCase(repository),
             getStartPosition = GetStartPositionUseCase(),
             saveItemResult = SaveItemResultUseCase(repository, clock),
-            addEvidence = AddEvidenceUseCase(repository, clock),
+            addEvidence = AddEvidenceUseCase(repository, photoStorage, clock),
             deleteEvidence = DeleteEvidenceUseCase(repository),
             preparePhotoCapture = PreparePhotoCaptureUseCase(photoStorage),
             discardPhoto = DiscardPhotoUseCase(photoStorage),
