@@ -1,13 +1,15 @@
 package ar.edu.uade.fieldcheck.presentation.common.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AssignmentTurnedIn
 import androidx.compose.material.icons.outlined.ErrorOutline
-import androidx.compose.material.icons.outlined.TaskAlt
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -16,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -36,19 +39,35 @@ fun LoadingState(modifier: Modifier = Modifier) {
     }
 }
 
+/**
+ * Estado vacío: ícono dentro de un círculo, título, una línea explicativa y,
+ * si corresponde, una acción (por ejemplo "Reintentar" en P2).
+ *
+ * @param icon por defecto el portapapeles con tilde de P1 (Figma 46:49).
+ * @param action botón opcional debajo del texto.
+ */
 @Composable
 fun EmptyState(
     title: String,
     description: String,
     modifier: Modifier = Modifier,
+    icon: ImageVector = Icons.Outlined.AssignmentTurnedIn,
+    action: (@Composable () -> Unit)? = null,
 ) {
     CenteredMessage(modifier = modifier) {
-        Icon(
-            imageVector = Icons.Outlined.TaskAlt,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(64.dp),
-        )
+        Box(
+            modifier = Modifier
+                .size(72.dp)
+                .background(color = MaterialTheme.colorScheme.surfaceContainer, shape = CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(36.dp),
+            )
+        }
         Text(
             text = title,
             style = MaterialTheme.typography.titleLarge,
@@ -56,10 +75,13 @@ fun EmptyState(
         )
         Text(
             text = description,
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        if (action != null) {
+            action()
+        }
     }
 }
 

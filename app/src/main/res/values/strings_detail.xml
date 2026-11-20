@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- P5 · Detalle de inspección -->
+
+    <!-- Tarjeta de sincronización -->
+    <string name="detail_sync_pending_title">Pendiente de subir</string>
+    <string name="detail_sync_pending_description">Se sube sola cuando haya conexión.</string>
+    <string name="detail_sync_synced_title">Sincronizada</string>
+    <string name="detail_sync_synced_description">Sincronizada con el servidor.</string>
+    <string name="detail_sync_failed_title">No se pudo subir</string>
+    <!-- Se usa solo si la base no guardó el motivo del error. -->
+    <string name="detail_sync_failed_default_reason">No pudimos subir la inspección al servidor.</string>
+
+    <!-- Datos generales -->
+    <string name="detail_label_template">Plantilla</string>
+    <string name="detail_label_started_at">Inicio</string>
+    <string name="detail_label_finished_at">Fin</string>
+    <string name="detail_no_date">—</string>
+
+    <!-- Lista de ítems "No cumple" -->
+    <string name="detail_section_not_complies">No cumple</string>
+    <string name="detail_no_not_complies">Ningún ítem quedó en \"No cumple\".</string>
+    <!-- "7. Matafuegos señalizados y con carga vigente" -->
+    <string name="detail_item_title">%1$d. %2$s</string>
+    <!-- TalkBack: "Foto 1 de 2 del ítem 7" (criterio A4) -->
+    <string name="detail_photo_description">Foto %1$d de %2$d del ítem %3$d</string>
+
+    <!-- Foto a pantalla completa -->
+    <string name="detail_photo_close">Cerrar foto</string>
+
+    <!-- Zona del pulgar -->
+    <string name="detail_share_summary">Compartir resumen</string>
+    <string name="detail_share_chooser_title">Compartir resumen de la inspección</string>
+</resources>

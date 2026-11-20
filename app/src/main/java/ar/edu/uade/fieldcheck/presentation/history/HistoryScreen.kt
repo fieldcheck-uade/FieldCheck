@@ -1,8 +1,10 @@
 package ar.edu.uade.fieldcheck.presentation.history
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
@@ -14,14 +16,11 @@ import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
@@ -40,42 +39,37 @@ import ar.edu.uade.fieldcheck.domain.model.SyncStatus
 import ar.edu.uade.fieldcheck.presentation.common.components.DarkModeToggleButton
 import ar.edu.uade.fieldcheck.presentation.common.components.EmptyState
 import ar.edu.uade.fieldcheck.presentation.common.components.ErrorState
-import ar.edu.uade.fieldcheck.presentation.common.components.LoadingState
+import ar.edu.uade.fieldcheck.presentation.common.components.OfflineBanner
+import ar.edu.uade.fieldcheck.presentation.history.components.HistoryLoadingSkeleton
 import ar.edu.uade.fieldcheck.presentation.history.components.InspectionCard
 
 /**
  * Contenedor de la pantalla P1 (patrón container / presentational).
  *
- * Se conecta con el [HistoryViewModel]: lee el estado, escucha los eventos one-shot
- * y le pasa todo a [HistoryScreen], que solo dibuja.
+ * Se conecta con el [HistoryViewModel]: lee el estado y le pasa todo a [HistoryScreen],
+ * que solo dibuja. Las acciones de navegación suben a `FieldCheckApp` por callbacks.
+ *
+ * @param onInspectionClick recibe la inspección tocada; `FieldCheckApp` decide si abre
+ *   la ejecución (en curso) o el detalle (finalizada).
  */
 @Composable
 fun HistoryRoute(
     isDarkMode: Boolean,
     onDarkModeChange: (Boolean) -> Unit,
+    onNewInspectionClick: () -> Unit,
+    onInspectionClick: (Inspection) -> Unit,
     viewModel: HistoryViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val snackbarHostState = remember { SnackbarHostState() }
-
-    // Escuchamos los eventos de una sola vez mientras la pantalla esté visible.
-    LaunchedEffect(viewModel) {
-        viewModel.effects.collect { effect ->
-            when (effect) {
-                is HistoryUiEffect.ShowSnackbar -> {
-                    snackbarHostState.showSnackbar(effect.message)
-                }
-            }
-        }
-    }
+    val isOnline by viewModel.isOnline.collectAsStateWithLifecycle()
 
     HistoryScreen(
         uiState = uiState,
-        snackbarHostState = snackbarHostState,
+        isOnline = isOnline,
         isDarkMode = isDarkMode,
         onDarkModeChange = onDarkModeChange,
-        onNewInspectionClick = viewModel::onNewInspectionClick,
-        onInspectionClick = viewModel::onInspectionClick,
+        onNewInspectionClick = onNewInspectionClick,
+        onInspectionClick = onInspectionClick,
         onRetryClick = viewModel::loadHistory,
     )
 }
@@ -88,17 +82,22 @@ fun HistoryRoute(
 @Composable
 fun HistoryScreen(
     uiState: UiState<InspectionHistory>,
-    snackbarHostState: SnackbarHostState,
+    isOnline: Boolean,
     isDarkMode: Boolean,
     onDarkModeChange: (Boolean) -> Unit,
     onNewInspectionClick: () -> Unit,
     onInspectionClick: (Inspection) -> Unit,
     onRetryClick: () -> Unit,
+    nowMillis: Long = System.currentTimeMillis(),
 ) {
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(text = stringResource(R.string.app_name)) },
+                // En Figma la barra no tiene fondo propio: es del mismo color que la pantalla.
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                ),
                 actions = {
                     DarkModeToggleButton(
                         isDarkMode = isDarkMode,
@@ -110,44 +109,72 @@ fun HistoryScreen(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onNewInspectionClick,
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
                 icon = { Icon(imageVector = Icons.Filled.Add, contentDescription = null) },
                 text = { Text(text = stringResource(R.string.history_new_inspection)) },
             )
         },
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
     ) { innerPadding ->
-        val contentModifier = Modifier
-            .fillMaxSize()
-            .padding(innerPadding)
-
-        when (uiState) {
-            is UiState.Loading -> {
-                LoadingState(modifier = contentModifier)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding),
+        ) {
+            // El banner va arriba de todo y no deshabilita nada (docs/pantallas.md, P1 · Offline).
+            if (!isOnline) {
+                OfflineBanner()
             }
 
-            is UiState.Error -> {
-                ErrorState(
-                    message = uiState.message,
-                    onRetryClick = onRetryClick,
-                    modifier = contentModifier,
+            HistoryContent(
+                uiState = uiState,
+                onInspectionClick = onInspectionClick,
+                onRetryClick = onRetryClick,
+                nowMillis = nowMillis,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun HistoryContent(
+    uiState: UiState<InspectionHistory>,
+    onInspectionClick: (Inspection) -> Unit,
+    onRetryClick: () -> Unit,
+    nowMillis: Long,
+    modifier: Modifier = Modifier,
+) {
+    when (uiState) {
+        is UiState.Loading -> {
+            HistoryLoadingSkeleton(modifier = modifier)
+        }
+
+        is UiState.Error -> {
+            ErrorState(
+                message = uiState.message,
+                onRetryClick = onRetryClick,
+                modifier = modifier,
+            )
+        }
+
+        is UiState.Success -> {
+            val history = uiState.data
+            if (history.isEmpty()) {
+                EmptyState(
+                    title = stringResource(R.string.history_empty_title),
+                    description = stringResource(R.string.history_empty_description),
+                    modifier = modifier,
                 )
-            }
-
-            is UiState.Success -> {
-                val history = uiState.data
-                if (history.isEmpty()) {
-                    EmptyState(
-                        title = stringResource(R.string.history_empty_title),
-                        description = stringResource(R.string.history_empty_description),
-                        modifier = contentModifier,
-                    )
-                } else {
-                    HistoryList(
-                        history = history,
-                        onInspectionClick = onInspectionClick,
-                        modifier = contentModifier,
-                    )
-                }
+            } else {
+                HistoryList(
+                    history = history,
+                    onInspectionClick = onInspectionClick,
+                    nowMillis = nowMillis,
+                    modifier = modifier,
+                )
             }
         }
     }
@@ -157,6 +184,7 @@ fun HistoryScreen(
 private fun HistoryList(
     history: InspectionHistory,
     onInspectionClick: (Inspection) -> Unit,
+    nowMillis: Long,
     modifier: Modifier = Modifier,
 ) {
     val inProgressTitle = stringResource(R.string.history_section_in_progress)
@@ -165,7 +193,7 @@ private fun HistoryList(
     LazyColumn(
         modifier = modifier,
         // Espacio abajo para que el FAB no tape la última tarjeta.
-        contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 96.dp),
+        contentPadding = PaddingValues(start = 16.dp, top = 0.dp, end = 16.dp, bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         // "En curso" va primero y solo se muestra si hay alguna.
@@ -174,6 +202,7 @@ private fun HistoryList(
                 title = inProgressTitle,
                 inspections = history.inProgress,
                 onInspectionClick = onInspectionClick,
+                nowMillis = nowMillis,
             )
         }
         if (history.finished.isNotEmpty()) {
@@ -181,6 +210,7 @@ private fun HistoryList(
                 title = finishedTitle,
                 inspections = history.finished,
                 onInspectionClick = onInspectionClick,
+                nowMillis = nowMillis,
             )
         }
     }
@@ -191,13 +221,15 @@ private fun LazyListScope.inspectionSection(
     title: String,
     inspections: List<Inspection>,
     onInspectionClick: (Inspection) -> Unit,
+    nowMillis: Long,
 ) {
     item(key = "section-$title") {
         Text(
             text = title,
-            style = MaterialTheme.typography.titleMedium,
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier
-                .padding(top = 8.dp, bottom = 4.dp)
+                .padding(start = 4.dp, top = 8.dp)
                 .semantics { heading() },
         )
     }
@@ -208,53 +240,78 @@ private fun LazyListScope.inspectionSection(
         InspectionCard(
             inspection = inspection,
             onClick = { onInspectionClick(inspection) },
+            nowMillis = nowMillis,
         )
     }
 }
 
 // ----- Previews: se ven en Android Studio sin correr la app -----
 
+/** "Ahora" fijo de los previews: 25/09/2026 18:00 (hora local aproximada). */
+private const val PREVIEW_NOW = 1_790_362_800_000L
+private const val ONE_HOUR = 60L * 60L * 1000L
+
 private fun previewInspection(
     id: String,
     siteName: String,
+    templateName: String,
     status: InspectionStatus,
     syncStatus: SyncStatus,
     completedItems: Int,
+    hoursAgo: Long,
 ): Inspection {
+    val date = PREVIEW_NOW - hoursAgo * ONE_HOUR
     return Inspection(
         clientUuid = id,
-        templateName = "Seguridad eléctrica",
+        templateName = templateName,
         siteName = siteName,
         status = status,
         syncStatus = syncStatus,
-        startedAt = 1_793_000_000_000L,
-        finishedAt = 1_793_003_600_000L,
-        totalItems = 8,
+        startedAt = date,
+        finishedAt = date,
+        totalItems = 20,
         completedItems = completedItems,
+    )
+}
+
+private fun previewHistory(): InspectionHistory {
+    return InspectionHistory(
+        inProgress = listOf(
+            previewInspection(
+                "1", "Obra Av. Siempreviva 742 — Subsuelo 2", "Control semanal de obra",
+                InspectionStatus.IN_PROGRESS, SyncStatus.PENDING, completedItems = 7, hoursAgo = 8,
+            ),
+        ),
+        finished = listOf(
+            previewInspection(
+                "2", "Planta Norte — Sala de bombas", "Sala técnica",
+                InspectionStatus.FINISHED, SyncStatus.PENDING, completedItems = 20, hoursAgo = 26,
+            ),
+            previewInspection(
+                "3", "Edificio Rivadavia 1200 — Azotea", "Control semanal de obra",
+                InspectionStatus.FINISHED, SyncStatus.SYNCED, completedItems = 20, hoursAgo = 55,
+            ),
+            previewInspection(
+                "4", "Depósito Lanús — Nave 3", "Seguridad e higiene",
+                InspectionStatus.FINISHED, SyncStatus.FAILED, completedItems = 20, hoursAgo = 104,
+            ),
+        ),
     )
 }
 
 @Preview(showBackground = true)
 @Composable
 private fun HistoryScreenContentPreview() {
-    val history = InspectionHistory(
-        inProgress = listOf(
-            previewInspection("1", "Planta Norte · Sala de bombas", InspectionStatus.IN_PROGRESS, SyncStatus.PENDING, 3),
-        ),
-        finished = listOf(
-            previewInspection("2", "Obra Belgrano · Piso 3", InspectionStatus.FINISHED, SyncStatus.SYNCED, 8),
-            previewInspection("3", "Depósito Sur · Tablero", InspectionStatus.FINISHED, SyncStatus.FAILED, 8),
-        ),
-    )
     FieldCheckTheme {
         HistoryScreen(
-            uiState = UiState.Success(history),
-            snackbarHostState = remember { SnackbarHostState() },
+            uiState = UiState.Success(previewHistory()),
+            isOnline = true,
             isDarkMode = false,
             onDarkModeChange = {},
             onNewInspectionClick = {},
             onInspectionClick = {},
             onRetryClick = {},
+            nowMillis = PREVIEW_NOW,
         )
     }
 }
@@ -262,20 +319,45 @@ private fun HistoryScreenContentPreview() {
 @Preview(showBackground = true, name = "Modo oscuro")
 @Composable
 private fun HistoryScreenDarkPreview() {
-    val history = InspectionHistory(
-        inProgress = listOf(
-            previewInspection("1", "Planta Norte · Sala de bombas", InspectionStatus.IN_PROGRESS, SyncStatus.PENDING, 3),
-        ),
-        finished = listOf(
-            previewInspection("2", "Obra Belgrano · Piso 3", InspectionStatus.FINISHED, SyncStatus.SYNCED, 8),
-            previewInspection("3", "Depósito Sur · Tablero", InspectionStatus.FINISHED, SyncStatus.FAILED, 8),
-        ),
-    )
     FieldCheckTheme(darkTheme = true) {
         HistoryScreen(
-            uiState = UiState.Success(history),
-            snackbarHostState = remember { SnackbarHostState() },
+            uiState = UiState.Success(previewHistory()),
+            isOnline = true,
             isDarkMode = true,
+            onDarkModeChange = {},
+            onNewInspectionClick = {},
+            onInspectionClick = {},
+            onRetryClick = {},
+            nowMillis = PREVIEW_NOW,
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun HistoryScreenOfflinePreview() {
+    FieldCheckTheme {
+        HistoryScreen(
+            uiState = UiState.Success(previewHistory()),
+            isOnline = false,
+            isDarkMode = false,
+            onDarkModeChange = {},
+            onNewInspectionClick = {},
+            onInspectionClick = {},
+            onRetryClick = {},
+            nowMillis = PREVIEW_NOW,
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun HistoryScreenLoadingPreview() {
+    FieldCheckTheme {
+        HistoryScreen(
+            uiState = UiState.Loading,
+            isOnline = true,
+            isDarkMode = false,
             onDarkModeChange = {},
             onNewInspectionClick = {},
             onInspectionClick = {},
@@ -291,7 +373,7 @@ private fun HistoryScreenEmptyPreview() {
     FieldCheckTheme {
         HistoryScreen(
             uiState = UiState.Success(emptyHistory),
-            snackbarHostState = remember { SnackbarHostState() },
+            isOnline = true,
             isDarkMode = false,
             onDarkModeChange = {},
             onNewInspectionClick = {},
@@ -307,7 +389,7 @@ private fun HistoryScreenErrorPreview() {
     FieldCheckTheme {
         HistoryScreen(
             uiState = UiState.Error("No pudimos leer las inspecciones guardadas."),
-            snackbarHostState = remember { SnackbarHostState() },
+            isOnline = true,
             isDarkMode = false,
             onDarkModeChange = {},
             onNewInspectionClick = {},

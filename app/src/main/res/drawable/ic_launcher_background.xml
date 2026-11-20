@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Fondo del ícono adaptativo: el mismo degradé azul del logo (de arriba hacia abajo). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <gradient
+        android:angle="270"
+        android:endColor="#00397B"
+        android:startColor="#226AC0" />
+</shape>
