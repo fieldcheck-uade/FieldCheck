@@ -107,4 +107,39 @@ interface InspectionDao {
         """
     )
     suspend fun markForSyncRetry(inspectionId: String): Int
+
+    // ---- Sincronización (RF03) ----
+
+    /** Inspecciones finalizadas que faltan subir, de la más vieja a la más nueva. */
+    @Query(
+        """
+        SELECT clientUuid FROM inspections
+        WHERE status = 'FINISHED' AND syncStatus = 'PENDING'
+        ORDER BY finishedAt
+        """
+    )
+    suspend fun getPendingFinishedIds(): List<String>
+
+    /** Lectura puntual (sin Flow) de una inspección con ítems y fotos, para armar el envío. */
+    @Transaction
+    @Query("SELECT * FROM inspections WHERE clientUuid = :inspectionId")
+    suspend fun getInspectionWithItems(inspectionId: String): InspectionWithItems?
+
+    @Query(
+        """
+        UPDATE inspections
+        SET syncStatus = 'SYNCED', lastSyncError = NULL
+        WHERE clientUuid = :inspectionId
+        """
+    )
+    suspend fun markSynced(inspectionId: String): Int
+
+    @Query(
+        """
+        UPDATE inspections
+        SET syncStatus = 'FAILED', lastSyncError = :message
+        WHERE clientUuid = :inspectionId
+        """
+    )
+    suspend fun markFailed(inspectionId: String, message: String): Int
 }

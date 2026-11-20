@@ -22,4 +22,8 @@ interface EvidenceDao {
 
     @Query("DELETE FROM evidence WHERE clientUuid = :evidenceId")
     suspend fun deleteEvidence(evidenceId: String): Int
+
+    /** La foto ya está en el servidor: si se corta la subida, no se vuelve a mandar. */
+    @Query("UPDATE evidence SET syncStatus = 'SYNCED' WHERE clientUuid = :evidenceId")
+    suspend fun markSynced(evidenceId: String): Int
 }

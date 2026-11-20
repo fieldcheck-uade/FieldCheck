@@ -34,7 +34,7 @@ Detalle completo en [`docs/preentrega.md`](docs/preentrega.md).
 
 1. Abrir la carpeta del repo en Android Studio (necesita JDK 17 o superior y el SDK de Android 37).
 2. Esperar la sincronización de Gradle y ejecutar la configuración `app` en un emulador o teléfono con Android 8.0 (API 26) o superior.
-3. La primera vez se cargan cuatro plantillas locales (simulan la descarga desde la API, que todavía no existe). Con ellas se puede crear una inspección desde "Nueva inspección".
+3. La primera vez se cargan cuatro plantillas de ejemplo, para poder usar la app aunque nunca haya tenido conexión. Apenas haya red y el backend esté levantado, se reemplazan por las del servidor.
 
 Desde la terminal:
 
@@ -47,7 +47,16 @@ Desde la terminal:
 
 Desde `backend/`: `docker compose up --build`. La API queda en `http://localhost:8000` (Swagger en `/docs`) y desde el emulador se accede en `http://10.0.2.2:8000`. Instrucciones completas, configuración y endpoints en [`backend/README.md`](backend/README.md).
 
-La app todavía no se conecta a la API: el cliente Retrofit y la sincronización con WorkManager (RF03) son el próximo paso.
+**Conectar la app con el backend**
+
+Por defecto, la app de debug apunta a `http://10.0.2.2:8000/` (la computadora vista desde el emulador) con la API key de desarrollo. Para cambiarlo, agregar en `local.properties` (no se sube al repo):
+
+```properties
+fieldcheck.apiBaseUrl=http://10.0.2.2:8000/
+fieldcheck.apiKey=dev-api-key
+```
+
+En debug, la app solo permite HTTP sin cifrar hacia `10.0.2.2` y `localhost` (`app/src/debug/res/xml/network_security_config.xml`). Para probar en un teléfono físico hay que agregar ahí la IP de la computadora.
 
 ## Arquitectura
 
@@ -62,7 +71,7 @@ Pantalla (Compose) → ViewModel → Caso de uso → Repositorio (interfaz) → 
 |---|---|---|
 | **Presentation** | Dibuja la pantalla (Compose) y guarda su estado (ViewModel). | No sabe de dónde vienen los datos. |
 | **Domain** | Modelos, reglas de negocio (casos de uso) e interfaces de repositorio. Kotlin puro. | No importa nada de Android, Room ni Retrofit. |
-| **Data** | Implementa los repositorios con Room (y más adelante Retrofit). Convierte entidades a modelos con mappers. | No tiene reglas de negocio. |
+| **Data** | Implementa los repositorios con Room y Retrofit, y programa la sincronización con WorkManager. Convierte entidades, DTOs y modelos con mappers. | No tiene reglas de negocio. |
 | **DI** | Módulos de Hilt que conectan cada interfaz con su implementación. | — |
 
 **Cómo viaja un dato (ejemplo: Historial, P1)**
@@ -88,10 +97,12 @@ app/src/main/java/ar/edu/uade/fieldcheck/
 │   ├── repository/            interfaces (contratos) de repositorio
 │   └── usecase/               casos de uso con reglas de negocio
 ├── data/
-│   ├── local/                 Room: database, dao, entity (preferencias en DataStore)
-│   ├── mapper/                Entity → Dominio
-│   └── repository/            implementaciones de los repositorios
-├── di/                        módulos de Hilt (DatabaseModule, DataStoreModule, RepositoryModule)
+│   ├── local/                 Room: database (con migraciones), dao, entity; archivos de fotos
+│   ├── remote/                Retrofit: api, dto y FieldCheckRemoteDataSource (clasifica errores)
+│   ├── mapper/                Entity ↔ Dominio y Entity ↔ DTO
+│   ├── repository/            implementaciones de los repositorios
+│   └── sync/                  SyncWorker y WorkManagerSyncScheduler (WorkManager)
+├── di/                        módulos de Hilt (Database, DataStore, Network, Repository, Time)
 └── presentation/
     ├── FieldCheckApp.kt       NavHost con el grafo de navegación
     ├── ThemeViewModel.kt      modo claro / oscuro de toda la app (guardado en DataStore)
@@ -101,13 +112,22 @@ app/src/main/java/ar/edu/uade/fieldcheck/
     ├── execution/             P3 · Ejecución de la inspección (cámara incluida)
     ├── review/                P4 · Revisión y finalización
     └── detail/                P5 · Detalle y compartir resumen
-app/src/test/                  tests unitarios con repositorio falso (sin emulador)
+app/src/test/                  tests unitarios con repositorios falsos y MockWebServer (sin emulador)
 backend/                       API FastAPI + SQLite (ver backend/README.md)
 docs/                          documentación de la preentrega
     diseno/                    wireframes, mockups y estados de pantalla
 ```
 
-La sincronización con el backend (`data/remote`, `data/sync`) y la ubicación de las fotos se suman en las próximas entregas siguiendo el mismo patrón.
+**Cómo se sincroniza una inspección (RF03)**
+
+1. Al finalizar (o al tocar "Reintentar" en el detalle), el caso de uso deja la inspección en `PENDING` y pide una sincronización a `SyncScheduler`.
+2. `WorkManagerSyncScheduler` encola `SyncWorker` con la condición "hay red". Sin conexión, WorkManager espera, aunque la app esté cerrada.
+3. Con red, `SyncWorker` actualiza las plantillas y ejecuta `SyncPendingInspectionsUseCase`, que sube cada inspección pendiente con `SyncRepository`: primero los datos y después las fotos que falten.
+4. Según el resultado:
+   - Si todo sube, la inspección pasa a "Sincronizada".
+   - Ante un error transitorio (sin red, timeout o 5xx), sigue "Pendiente" y WorkManager reintenta con espera exponencial.
+   - Ante un error permanente (4xx, por ejemplo una API key inválida), pasa a "Error" con el motivo y espera a que el usuario toque "Reintentar".
+5. La UI no se entera de la red: lee el estado desde Room, así que el chip y la tarjeta del detalle se actualizan solos.
 
 **Cómo agregar una pantalla nueva**
 
@@ -119,7 +139,7 @@ La sincronización con el backend (`data/remote`, `data/sync`) y la ubicación d
 
 Estrategia **offline first**: Room es la única fuente de verdad de la UI; las inspecciones se guardan localmente y WorkManager las sincroniza al haber red, de forma idempotente por `clientUuid`. Explicación completa en `docs/preentrega.md` (punto 14) y `docs/diagramas.md`.
 
-## Tecnologías previstas
+## Tecnologías
 
 | Área | Tecnología |
 |---|---|
@@ -127,11 +147,11 @@ Estrategia **offline first**: Room es la única fuente de verdad de la UI; las i
 | Navegación y estado | Navigation Compose (rutas tipadas), ViewModel, StateFlow, Coroutines |
 | Inyección de dependencias | Hilt (Dagger) |
 | Persistencia | Room 2.8 (KSP); DataStore Preferences para las preferencias del usuario (modo oscuro) |
-| Red | Retrofit 3, OkHttp 5, kotlinx.serialization |
-| Segundo plano | WorkManager |
+| Red | Retrofit 3, OkHttp 5 (log de red solo en debug), kotlinx.serialization |
+| Segundo plano | WorkManager, con los workers creados por Hilt (`hilt-work`) |
 | Dispositivo | Cámara del sistema (`TakePicture` + `FileProvider`), ubicación (Fused Location, opcional), hoja de compartir |
 | Imágenes | Coil 3 |
-| Tests | JUnit4, MockK, Turbine, kotlinx-coroutines-test, MockWebServer, Room in-memory |
+| Tests | JUnit4, Turbine, kotlinx-coroutines-test, MockWebServer; repositorios falsos escritos a mano en lugar de MockK |
 | Backend | FastAPI, SQLite, Docker Compose |
 
 Justificación de cada una en `docs/preentrega.md`, punto 15.
@@ -140,9 +160,9 @@ Justificación de cada una en `docs/preentrega.md`, punto 15.
 
 | Requisito | Descripción | Estado |
 |---|---|---|
-| RF01 | Crear una inspección a partir de una plantilla (plantillas cacheadas) | Listo (plantillas locales hasta tener API) |
+| RF01 | Crear una inspección a partir de una plantilla (plantillas cacheadas) | Listo (se descargan de la API y quedan en caché) |
 | RF02 | Completar ítems con resultado, nota y foto, sin conexión | Listo |
-| RF03 | Sincronización automática con estado visible y reintento | Pendiente |
+| RF03 | Sincronización automática con estado visible y reintento | Listo |
 | RF04 | Historial, detalle y compartir resumen | Listo |
 
 ## Decisiones relevantes
@@ -150,6 +170,10 @@ Justificación de cada una en `docs/preentrega.md`, punto 15.
 - **Room como única fuente de verdad:** la UI nunca lee de la red, así que funciona igual con o sin conexión.
 - **Sincronización al finalizar:** una inspección finalizada es de solo lectura, lo que casi elimina los conflictos; ante un conflicto, el servidor aplica *last-write-wins*.
 - **Idempotencia por `clientUuid`:** reintentar un envío nunca duplica datos en el servidor.
+- **Errores transitorios y permanentes:** solo se reintenta automáticamente lo que puede andar más tarde (sin red, timeout, 5xx). Un 4xx no se arregla reintentando, así que se muestra con su motivo y queda en manos del usuario.
+- **Fotos marcadas de a una:** cada foto subida se marca como sincronizada, así un corte a mitad de la subida no obliga a mandar todas otra vez.
+- **API key fuera del código:** se lee de `local.properties` en tiempo de compilación (`BuildConfig`) y el log de red la oculta.
+- **Migración de Room 1 → 2:** se agregó `templateVersion` a las inspecciones (la pide la API) con una migración, en lugar de borrar la base, para no perder inspecciones guardadas.
 - **Cámara del sistema en lugar de CameraX:** menos código y sin pedir el permiso `CAMERA`.
 - **Inyección de dependencias con Hilt:** reemplaza la inyección manual planteada en la preentrega, para alinearse con la arquitectura vista en clase. Hilt crea cada dependencia una sola vez y la entrega a ViewModels y repositorios, sin armar a mano un contenedor.
 - **Casos de uso entre ViewModel y repositorio:** los ViewModels hablan solo con casos de uso, como en la arquitectura de referencia. Cada caso de uso tiene una regla concreta (por ejemplo, separar y ordenar el historial), así que no son capas vacías.

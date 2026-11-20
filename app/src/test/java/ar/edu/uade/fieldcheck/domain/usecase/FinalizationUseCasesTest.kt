@@ -15,6 +15,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import ar.edu.uade.fieldcheck.fakes.FakeSyncScheduler
 
 class FinalizationUseCasesTest {
 
@@ -60,25 +61,29 @@ class FinalizationUseCasesTest {
             ),
         )
         repository.emitDetail("inspection-1", Resource.Success(detail))
-        val useCase = FinalizeInspectionUseCase(repository, checkFinalization, createTestClock(10_000L))
+        val syncScheduler = FakeSyncScheduler()
+        val useCase = FinalizeInspectionUseCase(repository, checkFinalization, syncScheduler, createTestClock(10_000L))
 
         val result = useCase("inspection-1")
 
         assertEquals(Resource.Error("Faltan 2 ítems para poder finalizar."), result)
         assertTrue(repository.finalizedInspections.isEmpty())
+        assertEquals(0, syncScheduler.requestCount)
     }
 
     @Test
-    fun `finalize saves the finish time when everything is complete`() = runTest {
+    fun `finalize saves the finish time and requests a sync when everything is complete`() = runTest {
         val repository = FakeInspectionRepository()
         val detail = createTestDetail(items = listOf(createTestItemResult(0, ItemResultValue.COMPLIES)))
         repository.emitDetail("inspection-1", Resource.Success(detail))
-        val useCase = FinalizeInspectionUseCase(repository, checkFinalization, createTestClock(10_000L))
+        val syncScheduler = FakeSyncScheduler()
+        val useCase = FinalizeInspectionUseCase(repository, checkFinalization, syncScheduler, createTestClock(10_000L))
 
         val result = useCase("inspection-1")
 
         assertEquals(Resource.Success(Unit), result)
         assertEquals(listOf(FinalizedInspection("inspection-1", 10_000L)), repository.finalizedInspections)
+        assertEquals(1, syncScheduler.requestCount)
     }
 
     @Test
@@ -86,7 +91,7 @@ class FinalizationUseCasesTest {
         val repository = FakeInspectionRepository()
         val detail = createTestDetail(items = listOf(createTestItemResult(0, null)))
         repository.emitDetail("inspection-1", Resource.Success(detail))
-        val useCase = FinalizeInspectionUseCase(repository, checkFinalization, createTestClock(10_000L))
+        val useCase = FinalizeInspectionUseCase(repository, checkFinalization, FakeSyncScheduler(), createTestClock(10_000L))
 
         val result = useCase("inspection-1")
 
@@ -102,7 +107,7 @@ class FinalizationUseCasesTest {
             inspection = finished,
         )
         repository.emitDetail("inspection-1", Resource.Success(detail))
-        val useCase = FinalizeInspectionUseCase(repository, checkFinalization, createTestClock(10_000L))
+        val useCase = FinalizeInspectionUseCase(repository, checkFinalization, FakeSyncScheduler(), createTestClock(10_000L))
 
         val result = useCase("inspection-1")
 
@@ -113,7 +118,7 @@ class FinalizationUseCasesTest {
     @Test
     fun `finalize passes through the error when the inspection cannot be read`() = runTest {
         val repository = FakeInspectionRepository()
-        val useCase = FinalizeInspectionUseCase(repository, checkFinalization, createTestClock(10_000L))
+        val useCase = FinalizeInspectionUseCase(repository, checkFinalization, FakeSyncScheduler(), createTestClock(10_000L))
 
         val result = useCase("does-not-exist")
 

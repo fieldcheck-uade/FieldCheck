@@ -32,6 +32,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import ar.edu.uade.fieldcheck.fakes.FakeSyncScheduler
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class DetailViewModelTest {
@@ -232,7 +233,7 @@ class DetailViewModelTest {
         return DetailViewModel(
             savedStateHandle = savedStateHandle,
             getInspectionDetail = GetInspectionDetailUseCase(repository),
-            retrySync = RetrySyncUseCase(repository),
+            retrySync = RetrySyncUseCase(repository, FakeSyncScheduler()),
             buildInspectionSummary = BuildInspectionSummaryUseCase(clock),
         )
     }

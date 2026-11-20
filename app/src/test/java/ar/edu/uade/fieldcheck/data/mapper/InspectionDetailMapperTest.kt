@@ -116,6 +116,7 @@ class InspectionDetailMapperTest {
             clientUuid = "uuid-1",
             templateId = "template-1",
             templateName = "Control semanal de obra",
+            templateVersion = 1,
             siteName = "Planta Norte",
             status = "IN_PROGRESS",
             startedAt = 1_000L,

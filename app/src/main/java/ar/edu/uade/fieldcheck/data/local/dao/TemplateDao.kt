@@ -50,6 +50,28 @@ interface TemplateDao {
     @Insert
     suspend fun insertTemplateItems(items: List<TemplateItemEntity>)
 
+    @Insert
+    suspend fun insertTemplates(templates: List<TemplateEntity>)
+
+    /** Los ítems se borran en cascada. */
+    @Query("DELETE FROM templates")
+    suspend fun deleteAllTemplates()
+
+    /**
+     * Reemplaza toda la caché por las plantillas descargadas, en una sola transacción:
+     * si algo falla a mitad de camino, queda la caché anterior y nunca una a medias.
+     * Las inspecciones no se ven afectadas porque guardan su propia copia de los textos.
+     */
+    @Transaction
+    suspend fun replaceAllTemplates(
+        templates: List<TemplateEntity>,
+        items: List<TemplateItemEntity>,
+    ) {
+        deleteAllTemplates()
+        insertTemplates(templates)
+        insertTemplateItems(items)
+    }
+
     /** Guarda la plantilla y sus ítems en una sola transacción: todo o nada. */
     @Transaction
     suspend fun insertTemplateWithItems(

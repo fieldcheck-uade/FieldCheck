@@ -31,6 +31,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import ar.edu.uade.fieldcheck.fakes.FakeSyncScheduler
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ReviewViewModelTest {
@@ -253,7 +254,7 @@ class ReviewViewModelTest {
             savedStateHandle = savedStateHandle,
             getInspectionDetail = GetInspectionDetailUseCase(repository),
             checkFinalization = checkFinalization,
-            finalizeInspection = FinalizeInspectionUseCase(repository, checkFinalization, createTestClock(nowMillis)),
+            finalizeInspection = FinalizeInspectionUseCase(repository, checkFinalization, FakeSyncScheduler(), createTestClock(nowMillis)),
             observeConnectivity = ObserveConnectivityUseCase(networkMonitor),
         )
     }

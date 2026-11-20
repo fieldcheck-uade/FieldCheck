@@ -16,9 +16,9 @@ import ar.edu.uade.fieldcheck.data.local.entity.TemplateItemEntity
  *
  * La instancia la crea Hilt en `di/DatabaseModule`, una sola vez para toda la app.
  *
- * Sigue en la versión 1 aunque se sumaron tablas: la app todavía no se publicó,
- * así que no hay bases instaladas que migrar. Al publicar, cada cambio de esquema
- * va a necesitar subir la versión y escribir una migración.
+ * Cada cambio de esquema sube la versión y se acompaña de una migración (ver `Migrations.kt`),
+ * para que quien ya tiene la app instalada no pierda sus inspecciones al actualizar.
+ * - Versión 2: `inspections.templateVersion`, que el servidor necesita al sincronizar.
  */
 @Database(
     entities = [
@@ -28,7 +28,7 @@ import ar.edu.uade.fieldcheck.data.local.entity.TemplateItemEntity
         ItemResultEntity::class,
         EvidenceEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = true,
 )
 abstract class FieldCheckDatabase : RoomDatabase() {

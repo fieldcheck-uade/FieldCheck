@@ -112,6 +112,7 @@ class InspectionRepositoryImpl @Inject constructor(
             clientUuid = inspectionId,
             templateId = template.id,
             templateName = template.name,
+            templateVersion = template.version,
             siteName = siteName,
             status = "IN_PROGRESS",
             startedAt = now,

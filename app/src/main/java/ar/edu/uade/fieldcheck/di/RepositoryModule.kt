@@ -4,11 +4,15 @@ import ar.edu.uade.fieldcheck.data.connectivity.AndroidNetworkMonitor
 import ar.edu.uade.fieldcheck.data.local.files.EvidenceFileStore
 import ar.edu.uade.fieldcheck.data.repository.InspectionRepositoryImpl
 import ar.edu.uade.fieldcheck.data.repository.SettingsRepositoryImpl
+import ar.edu.uade.fieldcheck.data.repository.SyncRepositoryImpl
 import ar.edu.uade.fieldcheck.data.repository.TemplateRepositoryImpl
+import ar.edu.uade.fieldcheck.data.sync.WorkManagerSyncScheduler
 import ar.edu.uade.fieldcheck.domain.repository.InspectionRepository
 import ar.edu.uade.fieldcheck.domain.repository.NetworkMonitor
 import ar.edu.uade.fieldcheck.domain.repository.PhotoStorage
 import ar.edu.uade.fieldcheck.domain.repository.SettingsRepository
+import ar.edu.uade.fieldcheck.domain.repository.SyncRepository
+import ar.edu.uade.fieldcheck.domain.repository.SyncScheduler
 import ar.edu.uade.fieldcheck.domain.repository.TemplateRepository
 import dagger.Binds
 import dagger.Module
@@ -59,4 +63,18 @@ abstract class RepositoryModule {
     abstract fun bindSettingsRepository(
         implementation: SettingsRepositoryImpl,
     ): SettingsRepository
+
+    /** Subida de inspecciones y fotos a la API (RF03). */
+    @Binds
+    @Singleton
+    abstract fun bindSyncRepository(
+        implementation: SyncRepositoryImpl,
+    ): SyncRepository
+
+    /** Programa la sincronización con WorkManager. */
+    @Binds
+    @Singleton
+    abstract fun bindSyncScheduler(
+        implementation: WorkManagerSyncScheduler,
+    ): SyncScheduler
 }

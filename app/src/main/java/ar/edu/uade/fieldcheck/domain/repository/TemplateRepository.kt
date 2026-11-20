@@ -7,8 +7,8 @@ import kotlinx.coroutines.flow.Flow
 /**
  * Contrato del repositorio de plantillas.
  *
- * Hoy las plantillas salen de una semilla local que simula la descarga de la API;
- * cuando exista el backend, solo cambia la implementación en Data.
+ * La primera vez las plantillas salen de una semilla local (para poder usar la app sin haber
+ * tenido nunca conexión); después se reemplazan por las que descarga [refreshTemplates].
  */
 interface TemplateRepository {
 
@@ -17,4 +17,10 @@ interface TemplateRepository {
 
     /** Busca una plantilla por id. Devuelve [Resource.Error] si no existe. */
     suspend fun getTemplate(templateId: String): Resource<Template>
+
+    /**
+     * Descarga las plantillas del servidor y reemplaza la caché local.
+     * Si la descarga falla, la caché queda como estaba.
+     */
+    suspend fun refreshTemplates(): Resource<Unit>
 }

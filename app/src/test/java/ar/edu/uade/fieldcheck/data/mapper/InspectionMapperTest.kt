@@ -63,6 +63,7 @@ class InspectionMapperTest {
             clientUuid = "uuid-1",
             templateId = "template-1",
             templateName = "Seguridad eléctrica",
+            templateVersion = 1,
             siteName = "Planta Norte",
             status = status,
             startedAt = 1_000L,
