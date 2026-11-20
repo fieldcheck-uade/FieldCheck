@@ -197,7 +197,7 @@ sequenceDiagram
     UC->>UC: validar (estados + evidencia en "No cumple")
     UC->>R: marcar FINALIZADA, syncStatus = PENDING
     R->>DB: update
-    UC->>WM: enqueueUniqueWork("sync-{clientUuid}", KEEP)<br/>restricción: red conectada, backoff exponencial
+    UC->>WM: enqueueUniqueWork("fieldcheck-sync", APPEND_OR_REPLACE)<br/>restricción: red conectada, backoff exponencial
     DB-->>VM: Flow emite cambio
     VM-->>U: Historial: "Pendiente"
     Note over WM: El trabajo espera: no se cumple la restricción de red
@@ -246,7 +246,7 @@ sequenceDiagram
 - **El caso difícil (pasos 14–17):** el servidor guardó los datos pero el teléfono no recibió la respuesta. Sin idempotencia, el reintento crearía una inspección duplicada. Con el `clientUuid` generado en el dispositivo, el servidor reconoce que ya la tiene y actualiza.
 - **Orden: primero datos, después fotos.** Las fotos referencian a la inspección por su `clientUuid`, así que la inspección tiene que existir primero. Además, si se corta a mitad de las fotos, las que ya subieron quedan `SYNCED` y el reintento solo sube las que faltan.
 - **Transitorio vs. permanente:** un timeout o un 5xx se reintentan solos (`Result.retry()`); un 401 o un 422 no se arreglan reintentando, así que pasan a `FAILED` y el usuario decide.
-- **Trabajo único por inspección (`KEEP`):** si ya hay un trabajo encolado para esa inspección, no se crea otro. Evita dos envíos en paralelo de lo mismo.
+- **Un único trabajo de sincronización (`APPEND_OR_REPLACE`):** un solo `SyncWorker` recorre todas las inspecciones pendientes en orden, así nunca hay dos envíos en paralelo. Si se finaliza otra inspección mientras corre, el nuevo pedido se encola detrás. (En la preentrega era un trabajo por inspección con `KEEP`; ver el README, "Cambios respecto de la preentrega").
 - **Conflictos:** después de finalizar, la inspección es de solo lectura en la app, y cada inspección tiene un único dueño. El *last-write-wins* del servidor queda como red de seguridad, no como mecanismo principal.
 
 ---
@@ -309,7 +309,7 @@ erDiagram
 - **Dos grupos de datos:** `TEMPLATE` y `TEMPLATE_ITEM` vienen de la API y son una caché que se puede reemplazar entera. `INSPECTION`, `ITEM_RESULT` y `EVIDENCE` los genera el usuario, solo existen en el dispositivo hasta que se sincronizan y nunca se pisan con datos del servidor.
 - **Copia del texto del ítem (`itemText`, `templateName`):** es una decisión deliberada de desnormalización. Una inspección es un registro histórico: si mañana la plantilla cambia, la inspección de hoy tiene que seguir mostrando lo que se revisó. Por eso `ITEM_RESULT` no depende de `TEMPLATE_ITEM` después de creada.
 - **Claves generadas en el dispositivo (`clientUuid`):** permiten crear registros sin conexión, sin esperar un id del servidor, y son la base de la idempotencia de la sincronización (diagrama 4).
-- **`syncStatus` como cola (patrón *outbox*):** el worker consulta "todo lo que esté `PENDING` o `FAILED`". No hace falta una tabla de cola aparte, porque el estado vive junto al dato que describe.
+- **`syncStatus` como cola (patrón *outbox*):** el worker consulta "todo lo finalizado que esté `PENDING`". Las `FAILED` no se toman solas: vuelven a `PENDING` cuando el usuario toca "Reintentar". No hace falta una tabla de cola aparte, porque el estado vive junto al dato que describe.
 - **`syncStatus` en `EVIDENCE` además de en `INSPECTION`:** las fotos son lo más pesado y lo que más probablemente falle con señal débil. Llevar el estado por foto permite reanudar donde se cortó.
 - **Las fotos no se guardan en la base:** Room guarda la ruta, el archivo vive en `files/evidence/`. Guardar blobs en SQLite agranda la base y empeora las consultas.
 - **`result` nullable:** `null` significa "sin completar". Es lo que permite calcular el progreso ("12 de 20") y validar la finalización.

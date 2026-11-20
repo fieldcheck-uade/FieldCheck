@@ -7,6 +7,8 @@
 **Repositorio:** https://github.com/fieldcheck-uade/FieldCheck
 **Figma:** [FieldCheck — Mockups](https://www.figma.com/design/huvTo8nDgobJskL3ysZDSj/FieldCheck-%E2%80%94-Mockups--DevApps1-)
 
+> **Nota (entrega final):** este documento es la preentrega tal como se aprobó. Los cambios hechos durante la implementación (Hilt en lugar de `AppContainer`, DataStore para el modo oscuro, un único trabajo de sincronización, fakes en lugar de MockK, geoetiquetado no implementado) están justificados en el [README, sección "Cambios respecto de la preentrega"](../README.md#cambios-respecto-de-la-preentrega).
+
 > Estructura: este documento sigue uno por uno los 17 entregables mínimos de la sección 5 de la consigna. La persistencia (punto 4.12 de la consigna, que no figura como entregable separado) se desarrolla dentro del punto 14.
 
 ---
