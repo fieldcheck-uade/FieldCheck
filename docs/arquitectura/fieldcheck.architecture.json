@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Arquitectura de FieldCheck",
+    "quality_profile": "showcase",
+    "repository": { "url": "https://github.com/fieldcheck-uade/FieldCheck", "revision": "4679b023680b76c7c0ebc131568c9a5a92f84bb0" },
+    "viewBox": [1320, 680]
+  },
+  "components": [
+    { "id": "ui", "type": "frontend", "label": "Compose UI", "sublabel": "P1–P5 · Screen/Route", "pos": [40, 200], "size": [140, 72], "sources": [{ "path": "app/src/main/java/ar/edu/uade/fieldcheck/presentation/FieldCheckApp.kt" }] },
+    { "id": "vm", "type": "frontend", "label": "ViewModels", "sublabel": "@HiltViewModel", "pos": [260, 200], "size": [140, 72], "sources": [{ "path": "app/src/main/java/ar/edu/uade/fieldcheck/presentation/history/HistoryViewModel.kt" }] },
+    { "id": "usecase", "type": "backend", "label": "Casos de uso", "sublabel": "Domain · Kotlin puro", "pos": [480, 200], "size": [140, 72], "sources": [{ "path": "app/src/main/java/ar/edu/uade/fieldcheck/domain/usecase/SyncPendingInspectionsUseCase.kt" }] },
+    { "id": "repo", "type": "backend", "label": "Repositorios", "sublabel": "Data · *RepositoryImpl", "pos": [700, 200], "size": [140, 72], "sources": [{ "path": "app/src/main/java/ar/edu/uade/fieldcheck/data/repository/InspectionRepositoryImpl.kt" }] },
+    { "id": "remote", "type": "backend", "label": "Retrofit", "sublabel": "RemoteDataSource", "pos": [920, 200], "size": [140, 72], "sources": [{ "path": "app/src/main/java/ar/edu/uade/fieldcheck/data/remote/FieldCheckRemoteDataSource.kt" }] },
+    { "id": "api", "type": "backend", "label": "FastAPI", "sublabel": "/templates · /inspections", "brand": "fastapi", "pos": [1140, 200], "size": [140, 72], "sources": [{ "path": "backend/app/main.py" }] },
+    { "id": "worker", "type": "messagebus", "label": "SyncWorker", "sublabel": "WorkManager", "pos": [480, 420], "size": [140, 72], "sources": [{ "path": "app/src/main/java/ar/edu/uade/fieldcheck/data/sync/SyncWorker.kt" }] },
+    { "id": "room", "type": "database", "label": "Room", "sublabel": "Única fuente de verdad", "pos": [700, 420], "size": [140, 72], "sources": [{ "path": "app/src/main/java/ar/edu/uade/fieldcheck/data/local/database/FieldCheckDatabase.kt" }] },
+    { "id": "files", "type": "database", "label": "Fotos locales", "sublabel": "1600 px · JPEG 80", "pos": [920, 420], "size": [140, 72], "sources": [{ "path": "app/src/main/java/ar/edu/uade/fieldcheck/data/local/files/EvidenceFileStore.kt" }] },
+    { "id": "sqlite", "type": "database", "label": "SQLite", "sublabel": "fieldcheck.db", "brand": "sqlite", "pos": [1140, 420], "size": [140, 72], "sources": [{ "path": "backend/app/config.py" }] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "App Android · MVVM + Clean · Hilt", "wraps": ["ui", "vm", "usecase", "repo", "remote", "worker", "room", "files"] },
+    { "kind": "region", "label": "Backend · Docker", "wraps": ["api", "sqlite"] }
+  ],
+  "connections": [
+    { "id": "ui-vm", "from": "ui", "to": "vm", "label": "eventos" },
+    { "id": "vm-uc", "from": "vm", "to": "usecase", "label": "invoca" },
+    { "id": "uc-repo", "from": "usecase", "to": "repo", "label": "interfaz" },
+    { "id": "repo-remote", "from": "repo", "to": "remote", "label": "sync" },
+    { "id": "remote-api", "from": "remote", "to": "api", "label": "HTTPS", "variant": "emphasis" },
+    { "id": "repo-room", "from": "repo", "to": "room", "label": "Flow", "fromSide": "bottom", "toSide": "top", "labelAt": [740, 346] },
+    { "id": "repo-files", "from": "repo", "to": "files", "label": "guarda foto", "fromSide": "bottom", "toSide": "top" },
+    { "id": "worker-uc", "from": "worker", "to": "usecase", "label": "con red", "variant": "dashed", "fromSide": "top", "toSide": "bottom" },
+    { "id": "api-sqlite", "from": "api", "to": "sqlite", "label": "SQLAlchemy", "fromSide": "bottom", "toSide": "top", "labelAt": [1210, 346] }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "Offline first", "items": ["La UI lee solo de Room vía Flow → UiState", "Crear, completar y compartir funcionan en modo avión"] },
+    { "dot": "amber", "title": "Sincronización (RF03)", "items": ["Finalizar deja PENDING y encola SyncWorker con red", "Idempotente por clientUuid; 5xx reintenta, 4xx → Error"] }
+  ]
+}
