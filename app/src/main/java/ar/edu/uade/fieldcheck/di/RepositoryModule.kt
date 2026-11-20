@@ -3,10 +3,12 @@ package ar.edu.uade.fieldcheck.di
 import ar.edu.uade.fieldcheck.data.connectivity.AndroidNetworkMonitor
 import ar.edu.uade.fieldcheck.data.local.files.EvidenceFileStore
 import ar.edu.uade.fieldcheck.data.repository.InspectionRepositoryImpl
+import ar.edu.uade.fieldcheck.data.repository.SettingsRepositoryImpl
 import ar.edu.uade.fieldcheck.data.repository.TemplateRepositoryImpl
 import ar.edu.uade.fieldcheck.domain.repository.InspectionRepository
 import ar.edu.uade.fieldcheck.domain.repository.NetworkMonitor
 import ar.edu.uade.fieldcheck.domain.repository.PhotoStorage
+import ar.edu.uade.fieldcheck.domain.repository.SettingsRepository
 import ar.edu.uade.fieldcheck.domain.repository.TemplateRepository
 import dagger.Binds
 import dagger.Module
@@ -50,4 +52,11 @@ abstract class RepositoryModule {
     abstract fun bindPhotoStorage(
         implementation: EvidenceFileStore,
     ): PhotoStorage
+
+    /** Preferencias del usuario (modo oscuro) guardadas con DataStore. */
+    @Binds
+    @Singleton
+    abstract fun bindSettingsRepository(
+        implementation: SettingsRepositoryImpl,
+    ): SettingsRepository
 }

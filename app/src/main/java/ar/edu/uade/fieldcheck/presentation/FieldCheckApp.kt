@@ -27,9 +27,15 @@ import ar.edu.uade.fieldcheck.presentation.review.ReviewRoute
  * Las pantallas no conocen al `NavController`: avisan con callbacks ("se tocó atrás",
  * "se creó la inspección") y acá se decide a dónde ir. Así las reglas de la pila de
  * navegación (qué pantalla sale al avanzar) quedan todas juntas en un solo lugar.
+ *
+ * Recibe el modo oscuro desde la Activity para que la pantalla pueda mostrar el botón
+ * que lo cambia en su barra superior.
  */
 @Composable
-fun FieldCheckApp() {
+fun FieldCheckApp(
+    isDarkMode: Boolean,
+    onDarkModeChange: (Boolean) -> Unit,
+) {
     val navController = rememberNavController()
 
     NavHost(
@@ -43,6 +49,8 @@ fun FieldCheckApp() {
     ) {
         composable<Screen.History> {
             HistoryRoute(
+                isDarkMode = isDarkMode,
+                onDarkModeChange = onDarkModeChange,
                 onNewInspectionClick = {
                     navController.navigate(Screen.NewInspection)
                 },

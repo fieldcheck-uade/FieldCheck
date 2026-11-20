@@ -36,6 +36,7 @@ import ar.edu.uade.fieldcheck.domain.model.Inspection
 import ar.edu.uade.fieldcheck.domain.model.InspectionHistory
 import ar.edu.uade.fieldcheck.domain.model.InspectionStatus
 import ar.edu.uade.fieldcheck.domain.model.SyncStatus
+import ar.edu.uade.fieldcheck.presentation.common.components.DarkModeToggleButton
 import ar.edu.uade.fieldcheck.presentation.common.components.EmptyState
 import ar.edu.uade.fieldcheck.presentation.common.components.ErrorState
 import ar.edu.uade.fieldcheck.presentation.common.components.OfflineBanner
@@ -53,6 +54,8 @@ import ar.edu.uade.fieldcheck.presentation.history.components.InspectionCard
  */
 @Composable
 fun HistoryRoute(
+    isDarkMode: Boolean,
+    onDarkModeChange: (Boolean) -> Unit,
     onNewInspectionClick: () -> Unit,
     onInspectionClick: (Inspection) -> Unit,
     viewModel: HistoryViewModel = hiltViewModel(),
@@ -63,6 +66,8 @@ fun HistoryRoute(
     HistoryScreen(
         uiState = uiState,
         isOnline = isOnline,
+        isDarkMode = isDarkMode,
+        onDarkModeChange = onDarkModeChange,
         onNewInspectionClick = onNewInspectionClick,
         onInspectionClick = onInspectionClick,
         onRetryClick = viewModel::loadHistory,
@@ -78,6 +83,8 @@ fun HistoryRoute(
 fun HistoryScreen(
     uiState: UiState<InspectionHistory>,
     isOnline: Boolean,
+    isDarkMode: Boolean,
+    onDarkModeChange: (Boolean) -> Unit,
     onNewInspectionClick: () -> Unit,
     onInspectionClick: (Inspection) -> Unit,
     onRetryClick: () -> Unit,
@@ -91,6 +98,12 @@ fun HistoryScreen(
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
                 ),
+                actions = {
+                    DarkModeToggleButton(
+                        isDarkMode = isDarkMode,
+                        onDarkModeChange = onDarkModeChange,
+                    )
+                },
             )
         },
         floatingActionButton = {
@@ -293,6 +306,25 @@ private fun HistoryScreenContentPreview() {
         HistoryScreen(
             uiState = UiState.Success(previewHistory()),
             isOnline = true,
+            isDarkMode = false,
+            onDarkModeChange = {},
+            onNewInspectionClick = {},
+            onInspectionClick = {},
+            onRetryClick = {},
+            nowMillis = PREVIEW_NOW,
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Modo oscuro")
+@Composable
+private fun HistoryScreenDarkPreview() {
+    FieldCheckTheme(darkTheme = true) {
+        HistoryScreen(
+            uiState = UiState.Success(previewHistory()),
+            isOnline = true,
+            isDarkMode = true,
+            onDarkModeChange = {},
             onNewInspectionClick = {},
             onInspectionClick = {},
             onRetryClick = {},
@@ -308,6 +340,8 @@ private fun HistoryScreenOfflinePreview() {
         HistoryScreen(
             uiState = UiState.Success(previewHistory()),
             isOnline = false,
+            isDarkMode = false,
+            onDarkModeChange = {},
             onNewInspectionClick = {},
             onInspectionClick = {},
             onRetryClick = {},
@@ -323,6 +357,8 @@ private fun HistoryScreenLoadingPreview() {
         HistoryScreen(
             uiState = UiState.Loading,
             isOnline = true,
+            isDarkMode = false,
+            onDarkModeChange = {},
             onNewInspectionClick = {},
             onInspectionClick = {},
             onRetryClick = {},
@@ -338,6 +374,8 @@ private fun HistoryScreenEmptyPreview() {
         HistoryScreen(
             uiState = UiState.Success(emptyHistory),
             isOnline = true,
+            isDarkMode = false,
+            onDarkModeChange = {},
             onNewInspectionClick = {},
             onInspectionClick = {},
             onRetryClick = {},
@@ -352,6 +390,8 @@ private fun HistoryScreenErrorPreview() {
         HistoryScreen(
             uiState = UiState.Error("No pudimos leer las inspecciones guardadas."),
             isOnline = true,
+            isDarkMode = false,
+            onDarkModeChange = {},
             onNewInspectionClick = {},
             onInspectionClick = {},
             onRetryClick = {},
