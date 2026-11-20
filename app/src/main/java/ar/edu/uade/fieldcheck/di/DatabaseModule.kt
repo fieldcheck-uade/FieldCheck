@@ -6,6 +6,7 @@ import ar.edu.uade.fieldcheck.data.local.dao.EvidenceDao
 import ar.edu.uade.fieldcheck.data.local.dao.InspectionDao
 import ar.edu.uade.fieldcheck.data.local.dao.TemplateDao
 import ar.edu.uade.fieldcheck.data.local.database.FieldCheckDatabase
+import ar.edu.uade.fieldcheck.data.local.database.MIGRATION_1_2
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -32,7 +33,9 @@ object DatabaseModule {
             context,
             FieldCheckDatabase::class.java,
             FieldCheckDatabase.DATABASE_NAME,
-        ).build()
+        )
+            .addMigrations(MIGRATION_1_2)
+            .build()
     }
 
     @Provides
