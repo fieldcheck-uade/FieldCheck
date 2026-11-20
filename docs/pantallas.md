@@ -299,7 +299,7 @@ Generado con FieldCheck
 | A6 | Tras el avance automático, TalkBack anuncia el ítem nuevo ("Ítem 8 de 20: …"). Los cambios de estado de sincronización y los `Snackbar` se anuncian (región dinámica). | Recorrido con TalkBack. |
 | A7 | Con el tamaño de fuente del sistema al 200 %, los textos se ajustan sin cortarse y la zona del pulgar sigue visible (el contenido superior se desplaza). | Prueba en emulador con escala de fuente máxima. |
 | A8 | El flujo RF02 completo se puede hacer solo con TalkBack. | Prueba manual. |
-| A9 | Modo oscuro completo, que respeta la configuración del sistema, para uso en interiores con poca luz. | Revisión visual en ambos modos. |
+| A9 | Modo oscuro completo para uso en interiores con poca luz. La app arranca en modo claro y se cambia con el botón de luna / sol de la barra superior; la elección se guarda entre aperturas. | Revisión visual en ambos modos; cerrar y reabrir la app con el modo oscuro activado. |
 | A10 | Los `Snackbar` con acción no desaparecen solos antes de que el usuario pueda tocarlos. | Prueba manual. |
 
 ---
