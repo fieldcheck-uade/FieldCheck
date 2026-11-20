@@ -3,6 +3,7 @@ package ar.edu.uade.fieldcheck.domain.usecase
 import ar.edu.uade.fieldcheck.core.model.Resource
 import ar.edu.uade.fieldcheck.domain.model.InspectionDetail
 import ar.edu.uade.fieldcheck.domain.repository.InspectionRepository
+import ar.edu.uade.fieldcheck.domain.repository.SyncScheduler
 import kotlinx.coroutines.flow.first
 import java.time.Clock
 import javax.inject.Inject
@@ -16,11 +17,13 @@ import javax.inject.Inject
  *   Se vuelve a validar acá (aunque P4 ya lo muestre) porque la regla es del negocio,
  *   no de la pantalla.
  * - Una inspección ya finalizada es de solo lectura (R6): no se puede finalizar de nuevo.
- * - Si todo está bien, el repositorio la pasa a FINISHED con la hora actual y PENDING para subir.
+ * - Si todo está bien, el repositorio la pasa a FINISHED con la hora actual y PENDING para subir,
+ *   y se pide una sincronización (RF03): sube sola en cuanto haya conexión.
  */
 class FinalizeInspectionUseCase @Inject constructor(
     private val repository: InspectionRepository,
     private val checkFinalization: CheckFinalizationUseCase,
+    private val syncScheduler: SyncScheduler,
     private val clock: Clock,
 ) {
 
@@ -49,9 +52,13 @@ class FinalizeInspectionUseCase @Inject constructor(
         }
 
         val now = clock.millis()
-        return repository.finalizeInspection(
+        val result = repository.finalizeInspection(
             inspectionId = detail.inspection.clientUuid,
             now = now,
         )
+        if (result is Resource.Success) {
+            syncScheduler.requestSync()
+        }
+        return result
     }
 }

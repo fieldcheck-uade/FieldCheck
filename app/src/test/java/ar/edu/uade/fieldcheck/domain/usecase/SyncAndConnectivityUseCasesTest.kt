@@ -14,31 +14,36 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import ar.edu.uade.fieldcheck.fakes.FakeSyncScheduler
 
 class SyncAndConnectivityUseCasesTest {
 
     @Test
-    fun `retry re-queues an inspection whose sync failed`() = runTest {
+    fun `retry re-queues an inspection whose sync failed and requests a sync`() = runTest {
         val repository = FakeInspectionRepository()
-        val useCase = RetrySyncUseCase(repository)
+        val syncScheduler = FakeSyncScheduler()
+        val useCase = RetrySyncUseCase(repository, syncScheduler)
         val failed = createTestInspection("abc", status = InspectionStatus.FINISHED, syncStatus = SyncStatus.FAILED)
 
         val result = useCase(failed)
 
         assertEquals(Resource.Success(Unit), result)
         assertEquals(listOf("abc"), repository.retriedInspectionIds)
+        assertEquals(1, syncScheduler.requestCount)
     }
 
     @Test
     fun `retry is refused when the sync did not fail`() = runTest {
         val repository = FakeInspectionRepository()
-        val useCase = RetrySyncUseCase(repository)
+        val syncScheduler = FakeSyncScheduler()
+        val useCase = RetrySyncUseCase(repository, syncScheduler)
         val synced = createTestInspection("abc", status = InspectionStatus.FINISHED, syncStatus = SyncStatus.SYNCED)
 
         val result = useCase(synced)
 
         assertTrue(result is Resource.Error)
         assertTrue(repository.retriedInspectionIds.isEmpty())
+        assertEquals(0, syncScheduler.requestCount)
     }
 
     @Test

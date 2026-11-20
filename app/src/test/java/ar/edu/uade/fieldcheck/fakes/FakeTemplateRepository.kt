@@ -9,7 +9,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 /** Repositorio de plantillas falso. Desde el test se cambia lo guardado con [emit]. */
 class FakeTemplateRepository(
     initialValue: Resource<List<Template>> = Resource.Success(emptyList()),
+    private val refreshResult: Resource<Unit> = Resource.Success(Unit),
 ) : TemplateRepository {
+
+    var refreshCount = 0
+        private set
 
     private val templates = MutableStateFlow(initialValue)
 
@@ -27,6 +31,11 @@ class FakeTemplateRepository(
             }
         }
         return Resource.Error("No encontramos la plantilla.")
+    }
+
+    override suspend fun refreshTemplates(): Resource<Unit> {
+        refreshCount++
+        return refreshResult
     }
 
     fun emit(value: Resource<List<Template>>) {
