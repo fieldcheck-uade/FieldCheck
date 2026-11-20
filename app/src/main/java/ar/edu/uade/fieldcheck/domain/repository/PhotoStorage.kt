@@ -19,4 +19,11 @@ interface PhotoStorage {
      * @return `true` si el archivo existía y se borró.
      */
     fun deletePhotoFile(filePath: String): Boolean
+
+    /**
+     * Reduce la foto ya tomada en el mismo archivo (RNF07): lado mayor de 1600 px y JPEG
+     * calidad 80, para que pese alrededor de 1 MB o menos y se pueda subir con señal débil.
+     * Respeta la orientación con la que se sacó la foto.
+     */
+    suspend fun compressPhoto(filePath: String): Resource<Unit>
 }

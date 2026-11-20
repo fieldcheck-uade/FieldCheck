@@ -2,6 +2,7 @@ package ar.edu.uade.fieldcheck.domain.usecase
 
 import ar.edu.uade.fieldcheck.core.model.Resource
 import ar.edu.uade.fieldcheck.domain.repository.InspectionRepository
+import ar.edu.uade.fieldcheck.domain.repository.PhotoStorage
 import java.time.Clock
 import javax.inject.Inject
 
@@ -10,11 +11,14 @@ import javax.inject.Inject
  *
  * Reglas:
  * - La foto tiene que tener un archivo: sin ruta no hay nada que guardar.
+ * - Antes de guardarla se reduce (RNF07): una foto de la cámara puede pesar varios MB y
+ *   tardaría mucho en subir con señal débil. Si no se puede reducir, no se guarda.
  * - La fecha de captura es el momento en que la cámara devolvió la foto.
  * - La ubicación todavía no se captura (fuera de alcance), por eso no se recibe.
  */
 class AddEvidenceUseCase @Inject constructor(
     private val repository: InspectionRepository,
+    private val photoStorage: PhotoStorage,
     private val clock: Clock,
 ) {
 
@@ -24,6 +28,12 @@ class AddEvidenceUseCase @Inject constructor(
         }
 
         val capturedAt = clock.millis()
+
+        val compressResult = photoStorage.compressPhoto(filePath)
+        if (compressResult is Resource.Error) {
+            return compressResult
+        }
+
         return repository.addEvidence(
             itemResultId = itemResultId,
             filePath = filePath,

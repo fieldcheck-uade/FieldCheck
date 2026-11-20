@@ -20,6 +20,11 @@ class FakePhotoStorage : PhotoStorage {
 
     val deletedFilePaths = mutableListOf<String>()
 
+    /** Resultado de [compressPhoto]; cambiarlo simula una foto que no se pudo procesar. */
+    var compressResult: Resource<Unit> = Resource.Success(Unit)
+
+    val compressedFilePaths = mutableListOf<String>()
+
     override fun createPhotoFile(): Resource<PendingPhoto> {
         return createResult
     }
@@ -27,6 +32,11 @@ class FakePhotoStorage : PhotoStorage {
     override fun deletePhotoFile(filePath: String): Boolean {
         deletedFilePaths.add(filePath)
         return true
+    }
+
+    override suspend fun compressPhoto(filePath: String): Resource<Unit> {
+        compressedFilePaths.add(filePath)
+        return compressResult
     }
 }
 
