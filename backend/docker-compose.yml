@@ -1,0 +1,14 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      # Se puede cambiar con un archivo .env al lado de este (no se sube al repo)
+      FIELDCHECK_API_KEY: ${FIELDCHECK_API_KEY:-dev-api-key}
+    volumes:
+      # SQLite y fotos recibidas: sobreviven aunque se recree el contenedor
+      - fieldcheck-data:/data
+
+volumes:
+  fieldcheck-data:

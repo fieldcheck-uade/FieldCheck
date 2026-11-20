@@ -43,7 +43,11 @@ Desde la terminal:
 ./gradlew testDebugUnitTest    # corre los tests unitarios (sin emulador)
 ```
 
-El backend se va a levantar con `docker compose up` desde `backend/` (_se completa en la Etapa 2_).
+**Backend**
+
+Desde `backend/`: `docker compose up --build`. La API queda en `http://localhost:8000` (Swagger en `/docs`) y desde el emulador se accede en `http://10.0.2.2:8000`. Instrucciones completas, configuración y endpoints en [`backend/README.md`](backend/README.md).
+
+La app todavía no se conecta a la API: el cliente Retrofit y la sincronización con WorkManager (RF03) son el próximo paso.
 
 ## Arquitectura
 
@@ -98,7 +102,7 @@ app/src/main/java/ar/edu/uade/fieldcheck/
     ├── review/                P4 · Revisión y finalización
     └── detail/                P5 · Detalle y compartir resumen
 app/src/test/                  tests unitarios con repositorio falso (sin emulador)
-backend/                       API FastAPI (etapa de implementación)
+backend/                       API FastAPI + SQLite (ver backend/README.md)
 docs/                          documentación de la preentrega
     diseno/                    wireframes, mockups y estados de pantalla
 ```
