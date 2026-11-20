@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -19,6 +21,19 @@ android {
         versionName = "0.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // URL de la API y API key: salen de local.properties (no se sube al repo) para no
+        // escribir la clave en el código (RNF08). Los valores por defecto son los del backend
+        // de desarrollo levantado con Docker y visto desde el emulador.
+        val localProperties = Properties()
+        val localPropertiesFile = rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            localPropertiesFile.inputStream().use { localProperties.load(it) }
+        }
+        val apiBaseUrl = localProperties.getProperty("fieldcheck.apiBaseUrl", "http://10.0.2.2:8000/")
+        val apiKey = localProperties.getProperty("fieldcheck.apiKey", "dev-api-key")
+        buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
+        buildConfigField("String", "API_KEY", "\"$apiKey\"")
     }
 
     buildTypes {
@@ -36,6 +51,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -79,6 +95,17 @@ dependencies {
 
     implementation(libs.kotlinx.coroutines.android)
 
+    // Red: Retrofit + OkHttp para hablar con la API (RF03)
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.kotlinx.serialization)
+    implementation(libs.okhttp)
+    implementation(libs.okhttp.logging)
+
+    // WorkManager: sube las inspecciones en segundo plano cuando hay red (RF03)
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.hilt.work)
+    ksp(libs.androidx.hilt.compiler)
+
     // Coil: muestra las fotos de evidencia guardadas en el teléfono
     implementation(libs.coil.compose)
 
@@ -86,4 +113,5 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.turbine)
+    testImplementation(libs.okhttp.mockwebserver)
 }

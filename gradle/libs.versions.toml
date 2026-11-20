@@ -16,6 +16,9 @@ datastore = "1.1.7"
 coroutines = "1.11.0"
 kotlinxSerialization = "1.11.0"
 coil = "3.6.3"
+retrofit = "3.0.0"
+okhttp = "5.5.1"
+work = "2.12.0"
 
 junit = "4.13.2"
 turbine = "1.2.1"
@@ -61,6 +64,18 @@ kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-
 
 # Carga de imágenes (miniaturas de las fotos de evidencia)
 coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
+
+# Red: cliente HTTP de la API (RF03)
+retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
+retrofit-kotlinx-serialization = { group = "com.squareup.retrofit2", name = "converter-kotlinx-serialization", version.ref = "retrofit" }
+okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
+okhttp-logging = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
+okhttp-mockwebserver = { group = "com.squareup.okhttp3", name = "mockwebserver3", version.ref = "okhttp" }
+
+# Trabajo en segundo plano: sincronización cuando hay red (RF03)
+androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "work" }
+androidx-hilt-work = { group = "androidx.hilt", name = "hilt-work", version.ref = "hiltAndroidx" }
+androidx-hilt-compiler = { group = "androidx.hilt", name = "hilt-compiler", version.ref = "hiltAndroidx" }
 
 # Tests
 junit = { group = "junit", name = "junit", version.ref = "junit" }
