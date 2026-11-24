@@ -10,7 +10,6 @@ import ar.edu.uade.fieldcheck.domain.model.Evidence
 import ar.edu.uade.fieldcheck.domain.model.InspectionDetail
 import ar.edu.uade.fieldcheck.domain.model.ItemResult
 import ar.edu.uade.fieldcheck.domain.model.ItemResultValue
-import ar.edu.uade.fieldcheck.domain.model.PendingPhoto
 import ar.edu.uade.fieldcheck.domain.usecase.AddEvidenceUseCase
 import ar.edu.uade.fieldcheck.domain.usecase.DeleteEvidenceUseCase
 import ar.edu.uade.fieldcheck.domain.usecase.DiscardPhotoUseCase
@@ -46,7 +45,7 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class ExecutionViewModel @Inject constructor(
-    savedStateHandle: SavedStateHandle,
+    private val savedStateHandle: SavedStateHandle,
     private val getInspectionDetail: GetInspectionDetailUseCase,
     private val getStartPosition: GetStartPositionUseCase,
     private val saveItemResult: SaveItemResultUseCase,
@@ -83,10 +82,6 @@ class ExecutionViewModel @Inject constructor(
     private var noteDraft: String = ""
 
     private var evidencePendingDeletion: Evidence? = null
-
-    /** Foto preparada para la cámara y el ítem al que pertenece, mientras la cámara está abierta. */
-    private var pendingPhoto: PendingPhoto? = null
-    private var pendingPhotoItemId: Long? = null
 
     private var detailJob: Job? = null
     private var noteSaveJob: Job? = null
@@ -352,8 +347,7 @@ class ExecutionViewModel @Inject constructor(
 
         when (val preparation = preparePhotoCapture()) {
             is Resource.Success -> {
-                pendingPhoto = preparation.data
-                pendingPhotoItemId = item.id
+                rememberPendingPhoto(filePath = preparation.data.filePath, itemId = item.id)
                 sendEvent(ExecutionEvent.OpenCamera(preparation.data.contentUri))
             }
 
@@ -365,29 +359,28 @@ class ExecutionViewModel @Inject constructor(
 
     /** La cámara volvió: con foto se guarda como evidencia; si se canceló, se borra el archivo vacío. */
     fun onPhotoResult(success: Boolean) {
-        val photo = pendingPhoto
-        val itemId = pendingPhotoItemId
-        pendingPhoto = null
-        pendingPhotoItemId = null
+        val filePath = savedStateHandle.get<String>(KEY_PENDING_PHOTO_PATH)
+        val itemId = savedStateHandle.get<Long>(KEY_PENDING_PHOTO_ITEM_ID)
+        forgetPendingPhoto()
 
-        if (photo == null || itemId == null) {
+        if (filePath == null || itemId == null) {
             return
         }
 
         if (!success) {
-            discardPhoto(photo.filePath)
+            discardPhoto(filePath)
             return
         }
 
         viewModelScope.launch {
-            val saveResult = addEvidence(itemId, photo.filePath)
+            val saveResult = addEvidence(itemId, filePath)
             when (saveResult) {
                 is Resource.Success -> {
                     sendEvent(ExecutionEvent.PhotoSaved)
                 }
 
                 is Resource.Error -> {
-                    discardPhoto(photo.filePath)
+                    discardPhoto(filePath)
                     sendEvent(ExecutionEvent.ShowError(saveResult.message))
                 }
             }
@@ -396,14 +389,29 @@ class ExecutionViewModel @Inject constructor(
 
     /** No hay app de cámara: se borra el archivo preparado y se avisa. */
     fun onCameraUnavailable() {
-        val photo = pendingPhoto
-        pendingPhoto = null
-        pendingPhotoItemId = null
+        val filePath = savedStateHandle.get<String>(KEY_PENDING_PHOTO_PATH)
+        forgetPendingPhoto()
 
-        if (photo != null) {
-            discardPhoto(photo.filePath)
+        if (filePath != null) {
+            discardPhoto(filePath)
         }
         sendEvent(ExecutionEvent.CameraUnavailable)
+    }
+
+    /**
+     * Mientras la cámara está abierta, Android puede cerrar FieldCheck para liberar memoria.
+     * Al volver se crea un ViewModel nuevo y las variables comunes se pierden, pero el
+     * [SavedStateHandle] se restaura: por eso la foto pendiente se anota ahí y no en una variable.
+     * Así la foto se guarda igual y no queda un archivo suelto en el teléfono (RNF02).
+     */
+    private fun rememberPendingPhoto(filePath: String, itemId: Long) {
+        savedStateHandle[KEY_PENDING_PHOTO_PATH] = filePath
+        savedStateHandle[KEY_PENDING_PHOTO_ITEM_ID] = itemId
+    }
+
+    private fun forgetPendingPhoto() {
+        savedStateHandle.remove<String>(KEY_PENDING_PHOTO_PATH)
+        savedStateHandle.remove<Long>(KEY_PENDING_PHOTO_ITEM_ID)
     }
 
     /** Mantener apretada una miniatura abre "¿Eliminar esta foto?". */
@@ -526,6 +534,11 @@ class ExecutionViewModel @Inject constructor(
         const val AUTO_ADVANCE_DELAY_MILLIS = 400L
 
         private const val EVENT_BUFFER_SIZE = 8
+
+        /** Claves de la foto pendiente en el [SavedStateHandle] (ver [rememberPendingPhoto]). */
+        private const val KEY_PENDING_PHOTO_PATH = "pendingPhotoPath"
+        private const val KEY_PENDING_PHOTO_ITEM_ID = "pendingPhotoItemId"
+
         private const val MESSAGE_NOT_FOUND = "No encontramos esta inspección."
         private const val MESSAGE_NO_ITEMS = "Esta inspección no tiene ítems."
 
