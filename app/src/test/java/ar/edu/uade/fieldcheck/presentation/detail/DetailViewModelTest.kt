@@ -13,8 +13,10 @@ import ar.edu.uade.fieldcheck.domain.model.ResultCounts
 import ar.edu.uade.fieldcheck.domain.model.SyncStatus
 import ar.edu.uade.fieldcheck.domain.usecase.BuildInspectionSummaryUseCase
 import ar.edu.uade.fieldcheck.domain.usecase.GetInspectionDetailUseCase
+import ar.edu.uade.fieldcheck.domain.usecase.ObserveConnectivityUseCase
 import ar.edu.uade.fieldcheck.domain.usecase.RetrySyncUseCase
 import ar.edu.uade.fieldcheck.fakes.FakeInspectionRepository
+import ar.edu.uade.fieldcheck.fakes.FakeNetworkMonitor
 import ar.edu.uade.fieldcheck.fakes.createTestClock
 import ar.edu.uade.fieldcheck.fakes.createTestDetail
 import ar.edu.uade.fieldcheck.fakes.createTestEvidence
@@ -28,6 +30,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -226,15 +229,27 @@ class DetailViewModelTest {
         return (state as UiState.Success).data
     }
 
+    @Test
+    fun `reports when the phone is offline`() = runTest {
+        val repository = FakeInspectionRepository()
+        val networkMonitor = FakeNetworkMonitor(initiallyOnline = false)
+
+        val viewModel = createViewModel(repository, networkMonitor = networkMonitor)
+
+        assertFalse(viewModel.isOnline.value)
+    }
+
     private fun createViewModel(
         repository: FakeInspectionRepository,
         savedStateHandle: SavedStateHandle = SavedStateHandle(mapOf(NavArguments.INSPECTION_ID to inspectionId)),
+        networkMonitor: FakeNetworkMonitor = FakeNetworkMonitor(),
     ): DetailViewModel {
         return DetailViewModel(
             savedStateHandle = savedStateHandle,
             getInspectionDetail = GetInspectionDetailUseCase(repository),
             retrySync = RetrySyncUseCase(repository, FakeSyncScheduler()),
             buildInspectionSummary = BuildInspectionSummaryUseCase(clock),
+            observeConnectivity = ObserveConnectivityUseCase(networkMonitor),
         )
     }
 }
