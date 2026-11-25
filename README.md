@@ -221,7 +221,7 @@ Justificación de cada decisión y alternativas descartadas en `docs/preentrega.
 - **Fotos reducidas al guardarlas, no al subirlas:** la foto se achica una sola vez, apenas vuelve de la cámara. Así ocupa menos lugar en el teléfono y cada reintento de subida manda el archivo chico. La regla está en `AddEvidenceUseCase`, y el procesamiento de la imagen (decodificar submuestreada, escalar, girar según el EXIF) en `EvidenceFileStore`.
 - **API key fuera del código:** se lee de `local.properties` en tiempo de compilación (`BuildConfig`) y el log de red la oculta.
 - **Migración de Room 1 → 2:** se agregó `templateVersion` a las inspecciones (la pide la API) con una migración en lugar de borrar la base, para no perder inspecciones guardadas.
-- **Casos de uso entre ViewModel y repositorio:** los ViewModels hablan solo con casos de uso, como en la arquitectura de referencia. Cada caso de uso tiene una regla concreta, así que no son capas vacías.
+- **Casos de uso entre ViewModel y repositorio:** los ViewModels hablan siempre con casos de uso y nunca con repositorios, como en la arquitectura de referencia (PokedexAcademy). La mayoría tiene una regla de negocio concreta (por ejemplo `FinalizeInspectionUseCase`, `CreateInspectionUseCase` o `GetInspectionHistoryUseCase`). Algunos son simples a propósito y solo llaman al repositorio (`GetInspectionDetailUseCase`, `DeleteEvidenceUseCase`, `ObserveDarkModeUseCase`, entre otros): se mantienen por consistencia, para que haya una sola regla ("el ViewModel usa casos de uso") y para que, si mañana aparece una regla, tenga un lugar donde ir sin tocar el ViewModel.
 
 ## Cambios respecto de la preentrega
 

@@ -14,7 +14,7 @@ import javax.inject.Inject
  * - Antes de guardarla se reduce (RNF07): una foto de la cámara puede pesar varios MB y
  *   tardaría mucho en subir con señal débil. Si no se puede reducir, no se guarda.
  * - La fecha de captura es el momento en que la cámara devolvió la foto.
- * - La ubicación todavía no se captura (fuera de alcance), por eso no se recibe.
+ * - La ubicación no se captura en esta versión (fuera de alcance), por eso no se recibe.
  */
 class AddEvidenceUseCase @Inject constructor(
     private val repository: InspectionRepository,

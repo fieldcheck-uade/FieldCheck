@@ -171,7 +171,7 @@ class InspectionRepositoryImpl @Inject constructor(
                 itemResultId = itemResultId,
                 filePath = filePath,
                 capturedAt = capturedAt,
-                // La ubicación todavía no se captura (fuera de alcance, ver S6).
+                // La ubicación no se captura en esta versión (ver "Limitaciones conocidas" del README).
                 latitude = null,
                 longitude = null,
                 syncStatus = "PENDING",

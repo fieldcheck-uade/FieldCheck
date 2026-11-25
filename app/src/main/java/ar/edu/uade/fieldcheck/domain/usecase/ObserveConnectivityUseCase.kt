@@ -8,9 +8,9 @@ import javax.inject.Inject
 /**
  * Caso de uso: saber si hay conexión, para mostrar u ocultar el `OfflineBanner`.
  *
- * Regla: solo se emite cuando el valor cambia. Android puede avisar varias veces seguidas
- * que hay red (por ejemplo al pasar de Wi-Fi a datos); sin este filtro la pantalla se
- * redibujaría sin motivo.
+ * Uno de los CU (ver README, "Decisiones relevantes"): existe para que
+ * los ViewModels hablen siempre con casos de uso. `distinctUntilChanged` garantiza que solo
+ * se emita cuando el valor cambia, sin depender de cómo esté hecho el monitor de red.
  */
 class ObserveConnectivityUseCase @Inject constructor(
     private val networkMonitor: NetworkMonitor,

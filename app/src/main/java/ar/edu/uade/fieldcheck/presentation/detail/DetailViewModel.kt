@@ -62,7 +62,7 @@ sealed interface DetailEffect {
  *
  * Responsabilidades:
  * 1. Observar la inspección finalizada y traducirla a [UiState] para la UI (solo lectura, R6).
- * 2. "Reintentar" la sincronización cuando falló (S6: sin backend, solo vuelve a PENDING).
+ * 2. "Reintentar" la sincronización cuando falló: la vuelve a PENDING y pide subirla de nuevo.
  * 3. Armar el resumen de texto y pedirle a la pantalla que lo comparta (R7).
  * 4. Informar si hay conexión, para mostrar el banner "Sin conexión" (docs/pantallas.md, P5 · Offline).
  *

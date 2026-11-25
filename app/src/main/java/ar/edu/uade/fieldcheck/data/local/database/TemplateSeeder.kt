@@ -7,11 +7,11 @@ import java.time.Clock
 import javax.inject.Inject
 
 /**
- * Carga las plantillas en la caché local la primera vez que se abre la app.
+ * Carga plantillas de ejemplo en la caché local la primera vez que se abre la app.
  *
- * Simula la descarga de plantillas desde la API, que todavía no existe (supuesto S5).
- * Cuando haya backend, esta clase se reemplaza por la sincronización real y el resto
- * de la app no cambia, porque todos leen las plantillas a través de `TemplateRepository`.
+ * Sirve para poder usar la app aunque el teléfono nunca haya tenido conexión (RNF01).
+ * Apenas hay red, la sincronización las reemplaza por las del servidor
+ * (`TemplateRepository.refreshTemplates`). Si la caché ya tiene plantillas, no hace nada.
  */
 class TemplateSeeder @Inject constructor(
     private val templateDao: TemplateDao,
