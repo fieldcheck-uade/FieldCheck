@@ -48,13 +48,13 @@ data class DetailContent(
  * Eventos que pasan una sola vez (no son estado): si se guardaran en el estado,
  * la hoja de compartir se volvería a abrir al rotar la pantalla.
  */
-sealed interface DetailEffect {
+sealed interface DetailEvent {
 
     /** Abrir la hoja de compartir de Android con este texto (regla R7). */
-    data class ShareSummary(val text: String) : DetailEffect
+    data class ShareSummary(val text: String) : DetailEvent
 
     /** Mostrar un mensaje corto (Snackbar), por ejemplo si falló "Reintentar". */
-    data class ShowMessage(val message: String) : DetailEffect
+    data class ShowMessage(val message: String) : DetailEvent
 }
 
 /**
@@ -67,7 +67,7 @@ sealed interface DetailEffect {
  * 4. Informar si hay conexión, para mostrar el banner "Sin conexión" (docs/pantallas.md, P5 · Offline).
  *
  * Abrir la hoja de compartir necesita un `Context` de Android, así que el ViewModel
- * no lo hace: emite un [DetailEffect.ShareSummary] y la pantalla se encarga.
+ * no lo hace: emite un [DetailEvent.ShareSummary] y la pantalla se encarga.
  */
 @HiltViewModel
 class DetailViewModel @Inject constructor(
@@ -89,8 +89,8 @@ class DetailViewModel @Inject constructor(
     val isOnline: StateFlow<Boolean> = _isOnline.asStateFlow()
 
     /** Sin `replay`: un evento ya consumido no se repite al volver a suscribirse. */
-    private val _effects = MutableSharedFlow<DetailEffect>()
-    val effects: SharedFlow<DetailEffect> = _effects.asSharedFlow()
+    private val _events = MutableSharedFlow<DetailEvent>()
+    val events: SharedFlow<DetailEvent> = _events.asSharedFlow()
 
     /**
      * Último detalle leído. Lo guardamos completo (y no solo [DetailContent]) porque
@@ -162,7 +162,7 @@ class DetailViewModel @Inject constructor(
 
         val summary = buildInspectionSummary(detail)
         viewModelScope.launch {
-            _effects.emit(DetailEffect.ShareSummary(summary))
+            _events.emit(DetailEvent.ShareSummary(summary))
         }
     }
 
@@ -192,7 +192,7 @@ class DetailViewModel @Inject constructor(
             }
 
             is Resource.Error -> {
-                _effects.emit(DetailEffect.ShowMessage(result.message))
+                _events.emit(DetailEvent.ShowMessage(result.message))
             }
         }
     }

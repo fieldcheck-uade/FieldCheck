@@ -16,7 +16,7 @@ import ar.edu.uade.fieldcheck.R
  * Contenedor de la pantalla P5 · Detalle de inspección (patrón container / presentational).
  *
  * Se conecta con el [DetailViewModel]: lee el estado y le pasa todo a [DetailScreen],
- * que solo dibuja. Además escucha los eventos de una sola vez ([DetailEffect]):
+ * que solo dibuja. Además escucha los eventos de una sola vez ([DetailEvent]):
  * abrir la hoja de compartir necesita un `Context`, y eso no puede vivir en el ViewModel.
  *
  * Mantiene la firma que usa `FieldCheckApp` para no tocar la navegación.
@@ -31,16 +31,16 @@ fun DetailRoute(
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
 
-    // Se lanza una sola vez por ViewModel: cada efecto se consume apenas llega.
+    // Se lanza una sola vez por ViewModel: cada evento se consume apenas llega.
     LaunchedEffect(viewModel) {
-        viewModel.effects.collect { effect ->
-            when (effect) {
-                is DetailEffect.ShareSummary -> {
-                    openShareSheet(context = context, summary = effect.text)
+        viewModel.events.collect { event ->
+            when (event) {
+                is DetailEvent.ShareSummary -> {
+                    openShareSheet(context = context, summary = event.text)
                 }
 
-                is DetailEffect.ShowMessage -> {
-                    snackbarHostState.showSnackbar(effect.message)
+                is DetailEvent.ShowMessage -> {
+                    snackbarHostState.showSnackbar(event.message)
                 }
             }
         }
