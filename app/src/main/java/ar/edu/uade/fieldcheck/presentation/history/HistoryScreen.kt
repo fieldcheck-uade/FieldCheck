@@ -20,15 +20,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ar.edu.uade.fieldcheck.R
 import ar.edu.uade.fieldcheck.core.model.UiState
 import ar.edu.uade.fieldcheck.core.theme.FieldCheckTheme
@@ -42,37 +39,6 @@ import ar.edu.uade.fieldcheck.presentation.common.components.ErrorState
 import ar.edu.uade.fieldcheck.presentation.common.components.OfflineBanner
 import ar.edu.uade.fieldcheck.presentation.history.components.HistoryLoadingSkeleton
 import ar.edu.uade.fieldcheck.presentation.history.components.InspectionCard
-
-/**
- * Contenedor de la pantalla P1 (patrón container / presentational).
- *
- * Se conecta con el [HistoryViewModel]: lee el estado y le pasa todo a [HistoryScreen],
- * que solo dibuja. Las acciones de navegación suben a `FieldCheckApp` por callbacks.
- *
- * @param onInspectionClick recibe la inspección tocada; `FieldCheckApp` decide si abre
- *   la ejecución (en curso) o el detalle (finalizada).
- */
-@Composable
-fun HistoryRoute(
-    isDarkMode: Boolean,
-    onDarkModeChange: (Boolean) -> Unit,
-    onNewInspectionClick: () -> Unit,
-    onInspectionClick: (Inspection) -> Unit,
-    viewModel: HistoryViewModel = hiltViewModel(),
-) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val isOnline by viewModel.isOnline.collectAsStateWithLifecycle()
-
-    HistoryScreen(
-        uiState = uiState,
-        isOnline = isOnline,
-        isDarkMode = isDarkMode,
-        onDarkModeChange = onDarkModeChange,
-        onNewInspectionClick = onNewInspectionClick,
-        onInspectionClick = onInspectionClick,
-        onRetryClick = viewModel::loadHistory,
-    )
-}
 
 /**
  * Pantalla P1 sin lógica: recibe el estado y avisa las acciones por callbacks.

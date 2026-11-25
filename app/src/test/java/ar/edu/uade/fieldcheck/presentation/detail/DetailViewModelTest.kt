@@ -150,15 +150,15 @@ class DetailViewModelTest {
         repository.writeResult = Resource.Error("No pudimos guardar el cambio.")
         val viewModel = createViewModel(repository)
 
-        viewModel.effects.test {
+        viewModel.events.test {
             viewModel.onRetrySyncClick()
 
-            assertEquals(DetailEffect.ShowMessage("No pudimos guardar el cambio."), awaitItem())
+            assertEquals(DetailEvent.ShowMessage("No pudimos guardar el cambio."), awaitItem())
         }
     }
 
     @Test
-    fun `share emits a one shot effect with the summary text`() = runTest {
+    fun `share emits a one shot event with the summary text`() = runTest {
         val repository = FakeInspectionRepository()
         val detail = createFinishedDetail(
             items = listOf(createTestItemResult(position = 0, result = ItemResultValue.NOT_COMPLIES, note = "Sin tapa")),
@@ -167,10 +167,10 @@ class DetailViewModelTest {
         val viewModel = createViewModel(repository)
         val expectedSummary = BuildInspectionSummaryUseCase(clock).invoke(detail)
 
-        viewModel.effects.test {
+        viewModel.events.test {
             viewModel.onShareClick()
 
-            assertEquals(DetailEffect.ShareSummary(expectedSummary), awaitItem())
+            assertEquals(DetailEvent.ShareSummary(expectedSummary), awaitItem())
             expectNoEvents()
         }
     }
