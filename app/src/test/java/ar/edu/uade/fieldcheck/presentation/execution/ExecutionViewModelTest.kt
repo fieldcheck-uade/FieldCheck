@@ -309,6 +309,25 @@ class ExecutionViewModelTest {
     }
 
     @Test
+    fun `a photo taken while Android closed the app is still saved`() = runTest {
+        givenItems(createTestItemResult(position = 0))
+        val savedState = SavedStateHandle(mapOf(NavArguments.INSPECTION_ID to inspectionId))
+        val viewModelBeforeCamera = createViewModel(savedStateHandle = savedState)
+        viewModelBeforeCamera.onAddPhotoClick()
+
+        // Con la cámara abierta, Android cierra la app: al volver se crea un ViewModel nuevo
+        // y solo sobrevive lo que estaba guardado en el SavedStateHandle.
+        val restoredState = SavedStateHandle(savedState.keys().associateWith { key -> savedState.get<Any>(key) })
+        val viewModelAfterCamera = createViewModel(savedStateHandle = restoredState)
+        viewModelAfterCamera.onPhotoResult(success = true)
+
+        val added = repository.addedEvidence.single()
+        assertEquals(1L, added.itemResultId)
+        assertEquals("/files/evidence/photo-1.jpg", added.filePath)
+        assertTrue(photoStorage.deletedFilePaths.isEmpty())
+    }
+
+    @Test
     fun `a cancelled camera discards the prepared photo file`() = runTest {
         givenItems(createTestItemResult(position = 0))
         val viewModel = createViewModel()
@@ -429,7 +448,10 @@ class ExecutionViewModelTest {
         throw AssertionError("El almacenamiento falso no tiene una foto preparada")
     }
 
-    private fun createViewModel(startPosition: Int? = null): ExecutionViewModel {
+    private fun createViewModel(
+        startPosition: Int? = null,
+        savedStateHandle: SavedStateHandle? = null,
+    ): ExecutionViewModel {
         val arguments = mutableMapOf<String, Any?>(NavArguments.INSPECTION_ID to inspectionId)
         if (startPosition != null) {
             arguments[NavArguments.START_POSITION] = startPosition
@@ -437,7 +459,7 @@ class ExecutionViewModelTest {
         val clock = createTestClock(now)
 
         return ExecutionViewModel(
-            savedStateHandle = SavedStateHandle(arguments),
+            savedStateHandle = savedStateHandle ?: SavedStateHandle(arguments),
             getInspectionDetail = GetInspectionDetailUseCase(repository),
             getStartPosition = GetStartPositionUseCase(),
             saveItemResult = SaveItemResultUseCase(repository, clock),
