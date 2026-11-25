@@ -1,7 +1,7 @@
 package ar.edu.uade.fieldcheck.domain.model
 
 /**
- * Plantilla de checklist descargada del servidor (o, la primera vez sin conexión, de la semilla local).
+ * Plantilla de checklist descargada del servidor (o la primera vez sin conexión, de la semilla local).
  *
  * Las plantillas son una caché: se pueden reemplazar enteras cuando llega una versión nueva.
  * Por eso una inspección copia los textos de los ítems al crearse (ver [ItemResult]).
