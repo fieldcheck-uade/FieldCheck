@@ -98,7 +98,7 @@ fun StartInspectionSheetContent(
 
         SiteField(
             siteName = state.siteName,
-            siteError = state.siteError,
+            isSiteMissing = state.isSiteMissing,
             enabled = !state.isCreating,
             onSiteNameChange = onSiteNameChange,
             onDone = onStartClick,
@@ -139,24 +139,18 @@ private fun SheetTemplateHeader(template: Template) {
 
 /**
  * Campo "Sitio *". Debajo siempre se lee "Obligatorio": en gris como ayuda y en el color
- * de error cuando el caso de uso rechazó el sitio vacío (regla R1).
+ * de error cuando se intentó empezar con el sitio vacío (regla R1).
  */
 @Composable
 private fun SiteField(
     siteName: String,
-    siteError: String?,
+    isSiteMissing: Boolean,
     enabled: Boolean,
     onSiteNameChange: (String) -> Unit,
     onDone: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val hasError = siteError != null
-    val supportingText: String
-    if (siteError != null) {
-        supportingText = siteError
-    } else {
-        supportingText = stringResource(R.string.new_inspection_site_required)
-    }
+    val supportingText = stringResource(R.string.new_inspection_site_required)
 
     OutlinedTextField(
         value = siteName,
@@ -166,7 +160,7 @@ private fun SiteField(
         label = { Text(text = stringResource(R.string.new_inspection_site_label)) },
         placeholder = { Text(text = stringResource(R.string.new_inspection_site_placeholder)) },
         supportingText = { Text(text = supportingText) },
-        isError = hasError,
+        isError = isSiteMissing,
         singleLine = true,
         keyboardOptions = KeyboardOptions(
             capitalization = KeyboardCapitalization.Sentences,
@@ -213,7 +207,7 @@ private fun StartButton(
 
 private fun previewSheetState(
     siteName: String = "Obra Av. Siempreviva 742 — Subsuelo 2",
-    siteError: String? = null,
+    isSiteMissing: Boolean = false,
     isCreating: Boolean = false,
 ): StartSheetState {
     val template = Template(
@@ -226,7 +220,7 @@ private fun previewSheetState(
     return StartSheetState(
         template = template,
         siteName = siteName,
-        siteError = siteError,
+        isSiteMissing = isSiteMissing,
         creationError = null,
         isCreating = isCreating,
     )
@@ -253,7 +247,7 @@ private fun StartInspectionSheetContentErrorPreview() {
     FieldCheckTheme {
         Surface {
             StartInspectionSheetContent(
-                state = previewSheetState(siteName = "", siteError = "Obligatorio"),
+                state = previewSheetState(siteName = "", isSiteMissing = true),
                 onSiteNameChange = {},
                 onStartClick = {},
                 requestFocusOnOpen = false,

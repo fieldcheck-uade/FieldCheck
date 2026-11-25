@@ -346,7 +346,7 @@ private fun NewInspectionSheetOpenPreview() {
     val sheet = StartSheetState(
         template = templates[0],
         siteName = "Obra Av. Siempreviva 742 — Subsuelo 2",
-        siteError = null,
+        isSiteMissing = false,
         creationError = null,
         isCreating = false,
     )

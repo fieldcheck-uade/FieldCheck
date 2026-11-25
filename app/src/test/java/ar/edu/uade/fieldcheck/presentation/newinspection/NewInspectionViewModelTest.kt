@@ -104,7 +104,7 @@ class NewInspectionViewModelTest {
         val expected = StartSheetState(
             template = template,
             siteName = "",
-            siteError = null,
+            isSiteMissing = false,
             creationError = null,
             isCreating = false,
         )
@@ -122,14 +122,14 @@ class NewInspectionViewModelTest {
     }
 
     @Test
-    fun `blank site shows Obligatorio and does not create the inspection`() = runTest {
+    fun `blank site marks the site field and does not create the inspection`() = runTest {
         val viewModel = createViewModel()
         viewModel.onTemplateSelected(createTestTemplate(id = "1"))
         viewModel.onSiteNameChange("   ")
 
         viewModel.onStartInspectionClick()
 
-        assertEquals("Obligatorio", viewModel.startSheetState.value?.siteError)
+        assertEquals(true, viewModel.startSheetState.value?.isSiteMissing)
         assertTrue(inspectionRepository.createdInspections.isEmpty())
     }
 
@@ -141,7 +141,7 @@ class NewInspectionViewModelTest {
 
         viewModel.onSiteNameChange("Obra")
 
-        assertNull(viewModel.startSheetState.value?.siteError)
+        assertEquals(false, viewModel.startSheetState.value?.isSiteMissing)
         assertEquals("Obra", viewModel.startSheetState.value?.siteName)
     }
 
@@ -178,7 +178,7 @@ class NewInspectionViewModelTest {
 
         val sheet = viewModel.startSheetState.value
         assertEquals("No pudimos crear la inspección.", sheet?.creationError)
-        assertNull(sheet?.siteError)
+        assertEquals(false, sheet?.isSiteMissing)
         assertEquals(false, sheet?.isCreating)
     }
 

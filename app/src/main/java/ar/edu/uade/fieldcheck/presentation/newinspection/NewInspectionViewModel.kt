@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import ar.edu.uade.fieldcheck.core.model.Resource
 import ar.edu.uade.fieldcheck.core.model.UiState
+import ar.edu.uade.fieldcheck.domain.model.CreateInspectionResult
 import ar.edu.uade.fieldcheck.domain.model.Template
 import ar.edu.uade.fieldcheck.domain.usecase.CreateInspectionUseCase
 import ar.edu.uade.fieldcheck.domain.usecase.GetTemplatesUseCase
@@ -22,14 +23,14 @@ import javax.inject.Inject
 /**
  * Estado de la hoja inferior "Empezar inspección" de P2.
  *
- * @property siteError error del campo "Sitio" (por ejemplo "Obligatorio"); `null` si no hay.
+ * @property isSiteMissing `true` si se intentó empezar con el sitio vacío: el campo se marca en rojo.
  * @property creationError error al guardar la inspección; se muestra arriba del botón.
  * @property isCreating `true` mientras se guarda: deshabilita el botón para evitar el doble toque.
  */
 data class StartSheetState(
     val template: Template,
     val siteName: String,
-    val siteError: String?,
+    val isSiteMissing: Boolean,
     val creationError: String?,
     val isCreating: Boolean,
 )
@@ -101,7 +102,7 @@ class NewInspectionViewModel @Inject constructor(
         _startSheetState.value = StartSheetState(
             template = template,
             siteName = "",
-            siteError = null,
+            isSiteMissing = false,
             creationError = null,
             isCreating = false,
         )
@@ -115,7 +116,7 @@ class NewInspectionViewModel @Inject constructor(
         }
         _startSheetState.value = currentSheet.copy(
             siteName = siteName,
-            siteError = null,
+            isSiteMissing = false,
             creationError = null,
         )
     }
@@ -144,7 +145,7 @@ class NewInspectionViewModel @Inject constructor(
 
         _startSheetState.value = currentSheet.copy(
             isCreating = true,
-            siteError = null,
+            isSiteMissing = false,
             creationError = null,
         )
 
@@ -166,34 +167,29 @@ class NewInspectionViewModel @Inject constructor(
         }
     }
 
-    private fun handleCreationResult(result: Resource<String>) {
+    /** El sitio vacío se marca en el campo; una falla al guardar se muestra arriba del botón. */
+    private fun handleCreationResult(result: CreateInspectionResult) {
         when (result) {
-            is Resource.Success -> {
+            is CreateInspectionResult.Created -> {
                 _startSheetState.value = null
-                _events.tryEmit(NewInspectionEvent.InspectionStarted(result.data))
+                _events.tryEmit(NewInspectionEvent.InspectionStarted(result.inspectionId))
             }
 
-            is Resource.Error -> {
-                showCreationError(result.message)
+            is CreateInspectionResult.SiteRequired -> {
+                updateSheet { sheet -> sheet.copy(isCreating = false, isSiteMissing = true) }
+            }
+
+            is CreateInspectionResult.Failed -> {
+                updateSheet { sheet -> sheet.copy(isCreating = false, creationError = result.message) }
             }
         }
     }
 
-    /**
-     * El caso de uso devuelve el mismo tipo de error para "sitio vacío" y para una falla
-     * al guardar. Los separamos para mostrar el primero en el campo y el segundo arriba del botón.
-     */
-    private fun showCreationError(message: String) {
+    /** Cambia la hoja solo si sigue abierta. */
+    private fun updateSheet(change: (StartSheetState) -> StartSheetState) {
         val currentSheet = _startSheetState.value
-        if (currentSheet == null) {
-            return
-        }
-
-        val isSiteMissing = message == CreateInspectionUseCase.SITE_REQUIRED_MESSAGE
-        if (isSiteMissing) {
-            _startSheetState.value = currentSheet.copy(isCreating = false, siteError = message)
-        } else {
-            _startSheetState.value = currentSheet.copy(isCreating = false, creationError = message)
+        if (currentSheet != null) {
+            _startSheetState.value = change(currentSheet)
         }
     }
 
