@@ -1,6 +1,7 @@
 package ar.edu.uade.fieldcheck.domain.usecase
 
 import ar.edu.uade.fieldcheck.core.model.Resource
+import ar.edu.uade.fieldcheck.domain.model.CreateInspectionResult
 import ar.edu.uade.fieldcheck.fakes.CreatedInspection
 import ar.edu.uade.fieldcheck.fakes.FakeInspectionRepository
 import ar.edu.uade.fieldcheck.fakes.createTestClock
@@ -15,13 +16,13 @@ class CreateInspectionUseCaseTest {
     private val template = createTestTemplate("control-obra", name = "Control semanal de obra")
 
     @Test
-    fun `blank site name is rejected with Obligatorio and nothing is created`() = runTest {
+    fun `blank site name is rejected and nothing is created`() = runTest {
         val repository = FakeInspectionRepository()
         val useCase = CreateInspectionUseCase(repository, createTestClock(5_000L))
 
         val result = useCase(template, "   ")
 
-        assertEquals(Resource.Error("Obligatorio"), result)
+        assertEquals(CreateInspectionResult.SiteRequired, result)
         assertTrue(repository.createdInspections.isEmpty())
     }
 
@@ -44,6 +45,17 @@ class CreateInspectionUseCaseTest {
 
         val result = useCase(template, "Planta Norte")
 
-        assertEquals(Resource.Success("uuid-123"), result)
+        assertEquals(CreateInspectionResult.Created("uuid-123"), result)
+    }
+
+    @Test
+    fun `a failure saving is reported with its message`() = runTest {
+        val repository = FakeInspectionRepository()
+        repository.createInspectionResult = Resource.Error("No pudimos crear la inspección.")
+        val useCase = CreateInspectionUseCase(repository, createTestClock(5_000L))
+
+        val result = useCase(template, "Planta Norte")
+
+        assertEquals(CreateInspectionResult.Failed("No pudimos crear la inspección."), result)
     }
 }
