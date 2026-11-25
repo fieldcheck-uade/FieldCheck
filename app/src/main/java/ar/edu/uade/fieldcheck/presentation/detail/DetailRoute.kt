@@ -27,6 +27,7 @@ fun DetailRoute(
 ) {
     val viewModel: DetailViewModel = hiltViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val isOnline by viewModel.isOnline.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
 
@@ -47,6 +48,7 @@ fun DetailRoute(
 
     DetailScreen(
         uiState = uiState,
+        isOnline = isOnline,
         snackbarHostState = snackbarHostState,
         onBackClick = onBackClick,
         onRetryLoadClick = viewModel::loadDetail,

@@ -54,6 +54,7 @@ import ar.edu.uade.fieldcheck.domain.model.ResultCounts
 import ar.edu.uade.fieldcheck.domain.model.SyncStatus
 import ar.edu.uade.fieldcheck.presentation.common.components.ErrorState
 import ar.edu.uade.fieldcheck.presentation.common.components.LoadingState
+import ar.edu.uade.fieldcheck.presentation.common.components.OfflineBanner
 import ar.edu.uade.fieldcheck.presentation.common.components.ResultCountsRow
 import ar.edu.uade.fieldcheck.presentation.detail.components.FullScreenPhotoDialog
 import ar.edu.uade.fieldcheck.presentation.detail.components.NotCompliesItemCard
@@ -82,6 +83,7 @@ private data class SelectedPhoto(
 @Composable
 fun DetailScreen(
     uiState: UiState<DetailContent>,
+    isOnline: Boolean,
     snackbarHostState: SnackbarHostState,
     onBackClick: () -> Unit,
     onRetryLoadClick: () -> Unit,
@@ -106,32 +108,44 @@ fun DetailScreen(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background,
     ) { innerPadding ->
-        val contentModifier = Modifier
-            .fillMaxSize()
-            .padding(innerPadding)
-
-        when (uiState) {
-            is UiState.Loading -> {
-                LoadingState(modifier = contentModifier)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding),
+        ) {
+            // El detalle y "Compartir" funcionan sin conexión; el banner solo informa
+            // (docs/pantallas.md, P5 · Offline).
+            if (!isOnline) {
+                OfflineBanner()
             }
 
-            is UiState.Error -> {
-                ErrorState(
-                    message = uiState.message,
-                    onRetryClick = onRetryLoadClick,
-                    modifier = contentModifier,
-                )
-            }
+            val contentModifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
 
-            is UiState.Success -> {
-                DetailContentList(
-                    content = uiState.data,
-                    onRetrySyncClick = onRetrySyncClick,
-                    onPhotoClick = { evidence, description ->
-                        selectedPhoto = SelectedPhoto(evidence = evidence, description = description)
-                    },
-                    modifier = contentModifier,
-                )
+            when (uiState) {
+                is UiState.Loading -> {
+                    LoadingState(modifier = contentModifier)
+                }
+
+                is UiState.Error -> {
+                    ErrorState(
+                        message = uiState.message,
+                        onRetryClick = onRetryLoadClick,
+                        modifier = contentModifier,
+                    )
+                }
+
+                is UiState.Success -> {
+                    DetailContentList(
+                        content = uiState.data,
+                        onRetrySyncClick = onRetrySyncClick,
+                        onPhotoClick = { evidence, description ->
+                            selectedPhoto = SelectedPhoto(evidence = evidence, description = description)
+                        },
+                        modifier = contentModifier,
+                    )
+                }
             }
         }
     }
@@ -394,6 +408,7 @@ private fun DetailScreenPendingPreview() {
     FieldCheckTheme {
         DetailScreen(
             uiState = UiState.Success(previewContent(SyncStatus.PENDING, null)),
+            isOnline = false,
             snackbarHostState = remember { SnackbarHostState() },
             onBackClick = {},
             onRetryLoadClick = {},
@@ -411,6 +426,7 @@ private fun DetailScreenErrorSyncPreview() {
             uiState = UiState.Success(
                 previewContent(SyncStatus.FAILED, "El servidor no respondió después de varios intentos."),
             ),
+            isOnline = true,
             snackbarHostState = remember { SnackbarHostState() },
             onBackClick = {},
             onRetryLoadClick = {},

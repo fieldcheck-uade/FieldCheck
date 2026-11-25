@@ -14,6 +14,7 @@ import ar.edu.uade.fieldcheck.domain.model.ResultCounts
 import ar.edu.uade.fieldcheck.domain.model.SyncStatus
 import ar.edu.uade.fieldcheck.domain.usecase.BuildInspectionSummaryUseCase
 import ar.edu.uade.fieldcheck.domain.usecase.GetInspectionDetailUseCase
+import ar.edu.uade.fieldcheck.domain.usecase.ObserveConnectivityUseCase
 import ar.edu.uade.fieldcheck.domain.usecase.RetrySyncUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -63,6 +64,7 @@ sealed interface DetailEffect {
  * 1. Observar la inspección finalizada y traducirla a [UiState] para la UI (solo lectura, R6).
  * 2. "Reintentar" la sincronización cuando falló (S6: sin backend, solo vuelve a PENDING).
  * 3. Armar el resumen de texto y pedirle a la pantalla que lo comparta (R7).
+ * 4. Informar si hay conexión, para mostrar el banner "Sin conexión" (docs/pantallas.md, P5 · Offline).
  *
  * Abrir la hoja de compartir necesita un `Context` de Android, así que el ViewModel
  * no lo hace: emite un [DetailEffect.ShareSummary] y la pantalla se encarga.
@@ -73,6 +75,7 @@ class DetailViewModel @Inject constructor(
     private val getInspectionDetail: GetInspectionDetailUseCase,
     private val retrySync: RetrySyncUseCase,
     private val buildInspectionSummary: BuildInspectionSummaryUseCase,
+    private val observeConnectivity: ObserveConnectivityUseCase,
 ) : ViewModel() {
 
     /** Id que llega por navegación; puede faltar si la ruta se armó mal (caso límite). */
@@ -80,6 +83,10 @@ class DetailViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow<UiState<DetailContent>>(UiState.Loading)
     val uiState: StateFlow<UiState<DetailContent>> = _uiState.asStateFlow()
+
+    /** Arranca en `true` para que el banner no aparezca un instante al abrir la pantalla con red. */
+    private val _isOnline = MutableStateFlow(true)
+    val isOnline: StateFlow<Boolean> = _isOnline.asStateFlow()
 
     /** Sin `replay`: un evento ya consumido no se repite al volver a suscribirse. */
     private val _effects = MutableSharedFlow<DetailEffect>()
@@ -99,6 +106,7 @@ class DetailViewModel @Inject constructor(
 
     init {
         loadDetail()
+        observeNetwork()
     }
 
     /** Empieza (o vuelve a empezar) a observar la inspección guardada en el teléfono. */
@@ -210,6 +218,14 @@ class DetailViewModel @Inject constructor(
             }
         }
         return notCompliesItems
+    }
+
+    private fun observeNetwork() {
+        viewModelScope.launch {
+            observeConnectivity().collect { online ->
+                _isOnline.value = online
+            }
+        }
     }
 
     private companion object {
