@@ -8,7 +8,7 @@ import javax.inject.Inject
 /**
  * Caso de uso: saber si hay conexión, para mostrar u ocultar el `OfflineBanner`.
  *
- * Es uno de los casos de uso simples (ver README, "Decisiones relevantes"): existe para que
+ * Uno de los CU (ver README, "Decisiones relevantes"): existe para que
  * los ViewModels hablen siempre con casos de uso. `distinctUntilChanged` garantiza que solo
  * se emita cuando el valor cambia, sin depender de cómo esté hecho el monitor de red.
  */
