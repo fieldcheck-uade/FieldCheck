@@ -24,8 +24,8 @@ import ar.edu.uade.fieldcheck.R
 @Composable
 fun DetailRoute(
     onBackClick: () -> Unit,
+    viewModel: DetailViewModel = hiltViewModel(),
 ) {
-    val viewModel: DetailViewModel = hiltViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val isOnline by viewModel.isOnline.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }

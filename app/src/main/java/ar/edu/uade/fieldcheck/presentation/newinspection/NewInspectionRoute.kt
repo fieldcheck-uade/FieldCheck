@@ -20,8 +20,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 fun NewInspectionRoute(
     onBackClick: () -> Unit,
     onInspectionStarted: (inspectionId: String) -> Unit,
+    viewModel: NewInspectionViewModel = hiltViewModel(),
 ) {
-    val viewModel: NewInspectionViewModel = hiltViewModel()
     val templatesState by viewModel.templatesState.collectAsStateWithLifecycle()
     val isOnline by viewModel.isOnline.collectAsStateWithLifecycle()
     val startSheetState by viewModel.startSheetState.collectAsStateWithLifecycle()

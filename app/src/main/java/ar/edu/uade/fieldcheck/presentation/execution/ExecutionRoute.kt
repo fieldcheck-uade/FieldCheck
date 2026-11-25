@@ -32,8 +32,8 @@ import kotlinx.coroutines.launch
 fun ExecutionRoute(
     onBackClick: () -> Unit,
     onGoToReview: (inspectionId: String) -> Unit,
+    viewModel: ExecutionViewModel = hiltViewModel(),
 ) {
-    val viewModel: ExecutionViewModel = hiltViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val isOnline by viewModel.isOnline.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
