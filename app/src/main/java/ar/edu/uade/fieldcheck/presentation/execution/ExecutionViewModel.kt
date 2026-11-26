@@ -229,7 +229,8 @@ class ExecutionViewModel @Inject constructor(
     /**
      * Toque en el [ResultSelector][ar.edu.uade.fieldcheck.presentation.common.components.ResultSelector].
      *
-     * - Tocar el resultado ya elegido lo deja sin completar (corrige un toque accidental).
+     * - Tocar el resultado ya elegido lo deja sin completar (corrige un toque accidental) y
+     *   ofrece "Deshacer", por si el que fue accidental es este segundo toque.
      * - Cumple y N/A avanzan solos al siguiente ítem tras una pausa breve.
      * - No cumple se queda, porque lo esperable es agregar evidencia.
      */
@@ -251,15 +252,60 @@ class ExecutionViewModel @Inject constructor(
         autoAdvanceJob?.cancel()
         val noteToSave = noteDraft
 
+        val previousResult = item.result
         viewModelScope.launch {
             val saveResult = saveItemResult(item.id, newResult, noteToSave)
             reportIfFailed(saveResult)
+
+            val wasCleared = newResult == null && previousResult != null && saveResult is Resource.Success
+            if (wasCleared) {
+                sendEvent(ExecutionEvent.ResultCleared(itemResultId = item.id, previousResult = previousResult))
+            }
         }
 
         val shouldAdvance = newResult == ItemResultValue.COMPLIES || newResult == ItemResultValue.NOT_APPLICABLE
         if (shouldAdvance) {
             scheduleAutoAdvance(fromIndex = currentIndex)
         }
+    }
+
+    /**
+     * "Deshacer" del Snackbar "Resultado borrado": vuelve a poner el resultado que tenía el ítem.
+     *
+     * Solo lo restaura si el ítem sigue sin completar: si mientras tanto el usuario eligió
+     * otro resultado, ese es el que vale y no se pisa. No avanza solo al siguiente ítem.
+     */
+    fun onUndoClearResult(itemResultId: Long, previousResult: ItemResultValue) {
+        if (isReadOnly()) {
+            return
+        }
+        val item = findItem(itemResultId)
+        if (item == null || item.result != null) {
+            return
+        }
+
+        // Si es el ítem que se está viendo, la nota puede tener cambios que todavía no se guardaron.
+        val isCurrentItem = currentItem()?.id == itemResultId
+        val noteToSave: String?
+        if (isCurrentItem) {
+            noteSaveJob?.cancel()
+            noteToSave = noteDraft
+        } else {
+            noteToSave = item.note
+        }
+
+        viewModelScope.launch {
+            val saveResult = saveItemResult(itemResultId, previousResult, noteToSave)
+            reportIfFailed(saveResult)
+        }
+    }
+
+    private fun findItem(itemResultId: Long): ItemResult? {
+        val detail = latestDetail
+        if (detail == null) {
+            return null
+        }
+        return detail.items.firstOrNull { item -> item.id == itemResultId }
     }
 
     /** Cada letra actualiza el campo; el guardado espera a que el usuario deje de escribir. */

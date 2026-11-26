@@ -179,6 +179,47 @@ class ExecutionViewModelTest {
     }
 
     @Test
+    fun `clearing a result offers to undo it`() = runTest {
+        givenItems(createTestItemResult(position = 0, result = ItemResultValue.COMPLIES))
+        val viewModel = createViewModel()
+
+        viewModel.events.test {
+            viewModel.onResultClick(ItemResultValue.COMPLIES)
+
+            val expected = ExecutionEvent.ResultCleared(itemResultId = 1L, previousResult = ItemResultValue.COMPLIES)
+            assertEquals(expected, awaitItem())
+        }
+    }
+
+    @Test
+    fun `undo restores the cleared result and keeps the note`() = runTest {
+        givenItems(createTestItemResult(position = 0, result = ItemResultValue.NOT_COMPLIES, note = "Falta cartel"))
+        val viewModel = createViewModel()
+        viewModel.onResultClick(ItemResultValue.NOT_COMPLIES)
+
+        viewModel.onUndoClearResult(itemResultId = 1L, previousResult = ItemResultValue.NOT_COMPLIES)
+
+        val saved = repository.savedItemResults.last()
+        assertEquals(ItemResultValue.NOT_COMPLIES, saved.result)
+        assertEquals("Falta cartel", saved.note)
+        assertEquals(ItemResultValue.NOT_COMPLIES, currentContent(viewModel).item.result)
+    }
+
+    @Test
+    fun `undo does nothing if the item already has a new result`() = runTest {
+        givenItems(createTestItemResult(position = 0, result = ItemResultValue.NOT_COMPLIES))
+        val viewModel = createViewModel()
+        viewModel.onResultClick(ItemResultValue.NOT_COMPLIES)
+        viewModel.onResultClick(ItemResultValue.NOT_APPLICABLE)
+        val savesBeforeUndo = repository.savedItemResults.size
+
+        viewModel.onUndoClearResult(itemResultId = 1L, previousResult = ItemResultValue.NOT_COMPLIES)
+
+        assertEquals(savesBeforeUndo, repository.savedItemResults.size)
+        assertEquals(ItemResultValue.NOT_APPLICABLE, currentContent(viewModel).item.result)
+    }
+
+    @Test
     fun `complies moves to the next item after a short pause`() = runTest {
         givenItems(createTestItemResult(position = 0), createTestItemResult(position = 1))
         val viewModel = createViewModel()

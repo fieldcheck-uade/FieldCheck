@@ -14,6 +14,8 @@
     <string name="execution_read_only">Esta inspección ya está finalizada. Solo se puede consultar.</string>
     <string name="execution_photo_saved">Foto guardada</string>
     <string name="execution_no_camera">No encontramos una app de cámara en el dispositivo.</string>
+    <string name="execution_result_cleared">Resultado borrado</string>
+    <string name="execution_undo">Deshacer</string>
     <string name="execution_delete_photo_title">¿Eliminar esta foto?</string>
     <string name="execution_delete_photo_confirm">Eliminar</string>
     <string name="execution_cancel">Cancelar</string>

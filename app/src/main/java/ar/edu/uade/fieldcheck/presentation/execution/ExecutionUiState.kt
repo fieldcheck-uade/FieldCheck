@@ -2,6 +2,7 @@ package ar.edu.uade.fieldcheck.presentation.execution
 
 import ar.edu.uade.fieldcheck.domain.model.Evidence
 import ar.edu.uade.fieldcheck.domain.model.ItemResult
+import ar.edu.uade.fieldcheck.domain.model.ItemResultValue
 
 /**
  * Lo que la pantalla P3 necesita para dibujar el ítem actual.
@@ -71,6 +72,15 @@ sealed interface ExecutionEvent {
 
     /** No hay app de cámara en el teléfono. */
     data object CameraUnavailable : ExecutionEvent
+
+    /**
+     * Se borró el resultado de un ítem (se tocó de nuevo el ya elegido): Snackbar
+     * "Resultado borrado" con "Deshacer", por si fue un toque accidental (por ejemplo, con guantes).
+     */
+    data class ResultCleared(
+        val itemResultId: Long,
+        val previousResult: ItemResultValue,
+    ) : ExecutionEvent
 
     /** Algo falló al guardar; [message] ya está en lenguaje simple. */
     data class ShowError(val message: String) : ExecutionEvent
