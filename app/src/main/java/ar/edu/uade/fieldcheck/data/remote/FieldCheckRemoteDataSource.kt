@@ -33,6 +33,8 @@ import javax.inject.Singleton
  * - 408, 429 y 5xx → [ApiResult.TransientError] (el servidor puede recuperarse).
  * - 401 / 403 → [ApiResult.PermanentError] "API key inválida".
  * - Cualquier otro 4xx → [ApiResult.PermanentError] con el motivo que mandó el servidor.
+ * - 2xx sin cuerpo en un pedido que espera datos (por ejemplo, 204 en las plantillas)
+ *   → [ApiResult.PermanentError]: no hay nada que la app pueda usar.
  */
 @Singleton
 class FieldCheckRemoteDataSource @Inject constructor(
@@ -41,11 +43,11 @@ class FieldCheckRemoteDataSource @Inject constructor(
 ) {
 
     suspend fun getTemplates(): ApiResult<List<TemplateDto>> {
-        return safeCall { api.getTemplates() }
+        return callWithBody { api.getTemplates() }
     }
 
     suspend fun sendInspection(inspection: InspectionDto): ApiResult<Unit> {
-        return safeCall { api.sendInspection(inspection) }
+        return callWithoutBody { api.sendInspection(inspection) }
     }
 
     /**
@@ -63,7 +65,7 @@ class FieldCheckRemoteDataSource @Inject constructor(
         val photoBody = photo.asRequestBody(JPEG)
         val filePart = MultipartBody.Part.createFormData("file", photo.name, photoBody)
 
-        return safeCall {
+        return callWithoutBody {
             api.uploadEvidence(
                 inspectionId = inspectionId,
                 file = filePart,
@@ -81,18 +83,51 @@ class FieldCheckRemoteDataSource @Inject constructor(
     }
 
     /**
-     * Ejecuta el pedido y convierte cualquier resultado en [ApiResult].
+     * Para pedidos que devuelven datos (por ejemplo, las plantillas).
+     * Si el servidor responde bien pero sin cuerpo, es un error: no hay datos para usar.
+     */
+    private suspend fun <T> callWithBody(call: suspend () -> Response<T>): ApiResult<T> {
+        val result = safeCall(call)
+        return when (result) {
+            is ApiResult.Success -> {
+                val body = result.data.body()
+                if (body == null) {
+                    ApiResult.PermanentError("El servidor respondió sin datos.")
+                } else {
+                    ApiResult.Success(body)
+                }
+            }
+
+            is ApiResult.TransientError -> result
+            is ApiResult.PermanentError -> result
+        }
+    }
+
+    /**
+     * Para pedidos de envío (inspección, foto): alcanza con que el servidor responda 2xx.
+     * El cuerpo de la respuesta no se usa, así que puede venir vacío (por ejemplo, un 204).
+     */
+    private suspend fun callWithoutBody(call: suspend () -> Response<Unit>): ApiResult<Unit> {
+        val result = safeCall(call)
+        return when (result) {
+            is ApiResult.Success -> ApiResult.Success(Unit)
+            is ApiResult.TransientError -> result
+            is ApiResult.PermanentError -> result
+        }
+    }
+
+    /**
+     * Ejecuta el pedido y clasifica el resultado. Si el servidor respondió 2xx, devuelve la
+     * respuesta completa para que [callWithBody] o [callWithoutBody] decidan qué hacer con el cuerpo.
      *
      * La [CancellationException] se vuelve a lanzar: significa que WorkManager detuvo el trabajo
      * (por ejemplo, se perdió la red), no que la API falló.
      */
-    private suspend fun <T> safeCall(call: suspend () -> Response<T>): ApiResult<T> {
+    private suspend fun <T> safeCall(call: suspend () -> Response<T>): ApiResult<Response<T>> {
         try {
             val response = call()
             if (response.isSuccessful) {
-                @Suppress("UNCHECKED_CAST")
-                val body = (response.body() ?: Unit) as T
-                return ApiResult.Success(body)
+                return ApiResult.Success(response)
             }
             return classifyHttpError(response)
         } catch (exception: CancellationException) {
@@ -106,7 +141,7 @@ class FieldCheckRemoteDataSource @Inject constructor(
         }
     }
 
-    private fun <T> classifyHttpError(response: Response<T>): ApiResult<T> {
+    private fun classifyHttpError(response: Response<*>): ApiResult<Nothing> {
         val code = response.code()
 
         if (code == 401 || code == 403) {

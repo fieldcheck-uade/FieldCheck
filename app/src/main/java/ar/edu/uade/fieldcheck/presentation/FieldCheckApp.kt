@@ -6,6 +6,7 @@ import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
+import androidx.lifecycle.Lifecycle
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -47,23 +48,29 @@ fun FieldCheckApp(
         popEnterTransition = { slideInFromLeft() },
         popExitTransition = { slideOutToRight() },
     ) {
-        composable<Screen.History> {
+        composable<Screen.History> { backStackEntry ->
             HistoryRoute(
                 isDarkMode = isDarkMode,
                 onDarkModeChange = onDarkModeChange,
                 onNewInspectionClick = {
-                    navController.navigate(Screen.NewInspection)
+                    if (backStackEntry.isResumed()) {
+                        navController.navigate(Screen.NewInspection)
+                    }
                 },
                 onInspectionClick = { inspection ->
-                    openInspection(navController, inspection)
+                    if (backStackEntry.isResumed()) {
+                        openInspection(navController, inspection)
+                    }
                 },
             )
         }
 
-        composable<Screen.NewInspection> {
+        composable<Screen.NewInspection> { backStackEntry ->
             NewInspectionRoute(
                 onBackClick = {
-                    navController.popBackStack()
+                    if (backStackEntry.isResumed()) {
+                        navController.popBackStack()
+                    }
                 },
                 onInspectionStarted = { inspectionId ->
                     // P2 sale de la pila: "atrás" desde P3 vuelve directo a P1.
@@ -76,10 +83,12 @@ fun FieldCheckApp(
             )
         }
 
-        composable<Screen.Execution> {
+        composable<Screen.Execution> { backStackEntry ->
             ExecutionRoute(
                 onBackClick = {
-                    navController.popBackStack()
+                    if (backStackEntry.isResumed()) {
+                        navController.popBackStack()
+                    }
                 },
                 onGoToReview = { inspectionId ->
                     navController.navigate(Screen.Review(inspectionId = inspectionId))
@@ -87,17 +96,21 @@ fun FieldCheckApp(
             )
         }
 
-        composable<Screen.Review> {
+        composable<Screen.Review> { backStackEntry ->
             ReviewRoute(
                 onBackClick = {
-                    navController.popBackStack()
+                    if (backStackEntry.isResumed()) {
+                        navController.popBackStack()
+                    }
                 },
                 onEditItem = { inspectionId, position ->
-                    // Se reemplaza la ejecución anterior (y la revisión) por una nueva en ese ítem,
-                    // para que la pila quede Historial → Ejecución y "atrás" vuelva a P1.
-                    navController.navigate(Screen.Execution(inspectionId = inspectionId, startPosition = position)) {
-                        popUpTo<Screen.Execution> {
-                            inclusive = true
+                    if (backStackEntry.isResumed()) {
+                        // Se reemplaza la ejecución anterior (y la revisión) por una nueva en ese ítem,
+                        // para que la pila quede Historial → Ejecución y "atrás" vuelva a P1.
+                        navController.navigate(Screen.Execution(inspectionId = inspectionId, startPosition = position)) {
+                            popUpTo<Screen.Execution> {
+                                inclusive = true
+                            }
                         }
                     }
                 },
@@ -113,14 +126,31 @@ fun FieldCheckApp(
             )
         }
 
-        composable<Screen.Detail> {
+        composable<Screen.Detail> { backStackEntry ->
             DetailRoute(
                 onBackClick = {
-                    navController.popBackStack()
+                    if (backStackEntry.isResumed()) {
+                        navController.popBackStack()
+                    }
                 },
             )
         }
     }
+}
+
+/**
+ * `true` si la pantalla está activa del todo: ya terminó de entrar y no se está yendo.
+ *
+ * Durante la animación de 300 ms la pantalla todavía se ve y se puede tocar. Sin este control,
+ * un doble toque (fácil con guantes) navega dos veces: por ejemplo, dos "atrás" seguidos
+ * sacaban también el Historial y la app quedaba en blanco.
+ *
+ * Se usa solo en las navegaciones que dispara un toque. Las que llegan como evento del
+ * ViewModel (inspección creada, ir a revisión, finalizada) no se filtran: pasan una sola
+ * vez y no tienen que perderse.
+ */
+private fun NavBackStackEntry.isResumed(): Boolean {
+    return lifecycle.currentState == Lifecycle.State.RESUMED
 }
 
 /** Desde el historial: una inspección en curso se retoma (P3); una finalizada se consulta (P5). */

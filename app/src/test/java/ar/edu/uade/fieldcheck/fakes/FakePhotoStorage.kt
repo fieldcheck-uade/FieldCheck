@@ -25,11 +25,11 @@ class FakePhotoStorage : PhotoStorage {
 
     val compressedFilePaths = mutableListOf<String>()
 
-    override fun createPhotoFile(): Resource<PendingPhoto> {
+    override suspend fun createPhotoFile(): Resource<PendingPhoto> {
         return createResult
     }
 
-    override fun deletePhotoFile(filePath: String): Boolean {
+    override suspend fun deletePhotoFile(filePath: String): Boolean {
         deletedFilePaths.add(filePath)
         return true
     }

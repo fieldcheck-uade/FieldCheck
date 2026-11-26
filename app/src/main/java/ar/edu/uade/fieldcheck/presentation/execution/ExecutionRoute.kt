@@ -5,7 +5,9 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -92,6 +94,8 @@ private fun ExecutionEventsEffect(
 ) {
     val photoSavedMessage = stringResource(R.string.execution_photo_saved)
     val noCameraMessage = stringResource(R.string.execution_no_camera)
+    val resultClearedMessage = stringResource(R.string.execution_result_cleared)
+    val undoLabel = stringResource(R.string.execution_undo)
 
     // Los Snackbars se muestran en su propia corrutina: `showSnackbar` espera a que se cierre,
     // y no queremos que eso demore otros eventos (por ejemplo, ir a P4).
@@ -127,6 +131,23 @@ private fun ExecutionEventsEffect(
                 is ExecutionEvent.ShowError -> {
                     snackbarScope.launch {
                         snackbarHostState.showSnackbar(event.message)
+                    }
+                }
+
+                is ExecutionEvent.ResultCleared -> {
+                    snackbarScope.launch {
+                        // Duración larga: con guantes, el usuario necesita tiempo para llegar a "Deshacer".
+                        val snackbarResult = snackbarHostState.showSnackbar(
+                            message = resultClearedMessage,
+                            actionLabel = undoLabel,
+                            duration = SnackbarDuration.Long,
+                        )
+                        if (snackbarResult == SnackbarResult.ActionPerformed) {
+                            viewModel.onUndoClearResult(
+                                itemResultId = event.itemResultId,
+                                previousResult = event.previousResult,
+                            )
+                        }
                     }
                 }
             }

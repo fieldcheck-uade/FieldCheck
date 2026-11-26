@@ -21,12 +21,12 @@ import ar.edu.uade.fieldcheck.domain.usecase.SaveItemResultUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -66,8 +66,8 @@ class ExecutionViewModel @Inject constructor(
     private val _isOnline = MutableStateFlow(true)
     val isOnline: StateFlow<Boolean> = _isOnline.asStateFlow()
 
-    private val _events = MutableSharedFlow<ExecutionEvent>(extraBufferCapacity = EVENT_BUFFER_SIZE)
-    val events: SharedFlow<ExecutionEvent> = _events.asSharedFlow()
+    private val _events = Channel<ExecutionEvent>(Channel.BUFFERED)
+    val events: Flow<ExecutionEvent> = _events.receiveAsFlow()
 
     /** Última versión de la inspección que llegó de la base. */
     private var latestDetail: InspectionDetail? = null
@@ -229,7 +229,8 @@ class ExecutionViewModel @Inject constructor(
     /**
      * Toque en el [ResultSelector][ar.edu.uade.fieldcheck.presentation.common.components.ResultSelector].
      *
-     * - Tocar el resultado ya elegido lo deja sin completar (corrige un toque accidental).
+     * - Tocar el resultado ya elegido lo deja sin completar (corrige un toque accidental) y
+     *   ofrece "Deshacer", por si el que fue accidental es este segundo toque.
      * - Cumple y N/A avanzan solos al siguiente ítem tras una pausa breve.
      * - No cumple se queda, porque lo esperable es agregar evidencia.
      */
@@ -251,15 +252,60 @@ class ExecutionViewModel @Inject constructor(
         autoAdvanceJob?.cancel()
         val noteToSave = noteDraft
 
+        val previousResult = item.result
         viewModelScope.launch {
             val saveResult = saveItemResult(item.id, newResult, noteToSave)
             reportIfFailed(saveResult)
+
+            val wasCleared = newResult == null && previousResult != null && saveResult is Resource.Success
+            if (wasCleared) {
+                sendEvent(ExecutionEvent.ResultCleared(itemResultId = item.id, previousResult = previousResult))
+            }
         }
 
         val shouldAdvance = newResult == ItemResultValue.COMPLIES || newResult == ItemResultValue.NOT_APPLICABLE
         if (shouldAdvance) {
             scheduleAutoAdvance(fromIndex = currentIndex)
         }
+    }
+
+    /**
+     * "Deshacer" del Snackbar "Resultado borrado": vuelve a poner el resultado que tenía el ítem.
+     *
+     * Solo lo restaura si el ítem sigue sin completar: si mientras tanto el usuario eligió
+     * otro resultado, ese es el que vale y no se pisa. No avanza solo al siguiente ítem.
+     */
+    fun onUndoClearResult(itemResultId: Long, previousResult: ItemResultValue) {
+        if (isReadOnly()) {
+            return
+        }
+        val item = findItem(itemResultId)
+        if (item == null || item.result != null) {
+            return
+        }
+
+        // Si es el ítem que se está viendo, la nota puede tener cambios que todavía no se guardaron.
+        val isCurrentItem = currentItem()?.id == itemResultId
+        val noteToSave: String?
+        if (isCurrentItem) {
+            noteSaveJob?.cancel()
+            noteToSave = noteDraft
+        } else {
+            noteToSave = item.note
+        }
+
+        viewModelScope.launch {
+            val saveResult = saveItemResult(itemResultId, previousResult, noteToSave)
+            reportIfFailed(saveResult)
+        }
+    }
+
+    private fun findItem(itemResultId: Long): ItemResult? {
+        val detail = latestDetail
+        if (detail == null) {
+            return null
+        }
+        return detail.items.firstOrNull { item -> item.id == itemResultId }
     }
 
     /** Cada letra actualiza el campo; el guardado espera a que el usuario deje de escribir. */
@@ -345,14 +391,16 @@ class ExecutionViewModel @Inject constructor(
             return
         }
 
-        when (val preparation = preparePhotoCapture()) {
-            is Resource.Success -> {
-                rememberPendingPhoto(filePath = preparation.data.filePath, itemId = item.id)
-                sendEvent(ExecutionEvent.OpenCamera(preparation.data.contentUri))
-            }
+        viewModelScope.launch {
+            when (val preparation = preparePhotoCapture()) {
+                is Resource.Success -> {
+                    rememberPendingPhoto(filePath = preparation.data.filePath, itemId = item.id)
+                    sendEvent(ExecutionEvent.OpenCamera(preparation.data.contentUri))
+                }
 
-            is Resource.Error -> {
-                sendEvent(ExecutionEvent.ShowError(preparation.message))
+                is Resource.Error -> {
+                    sendEvent(ExecutionEvent.ShowError(preparation.message))
+                }
             }
         }
     }
@@ -368,7 +416,9 @@ class ExecutionViewModel @Inject constructor(
         }
 
         if (!success) {
-            discardPhoto(filePath)
+            viewModelScope.launch {
+                discardPhoto(filePath)
+            }
             return
         }
 
@@ -393,7 +443,9 @@ class ExecutionViewModel @Inject constructor(
         forgetPendingPhoto()
 
         if (filePath != null) {
-            discardPhoto(filePath)
+            viewModelScope.launch {
+                discardPhoto(filePath)
+            }
         }
         sendEvent(ExecutionEvent.CameraUnavailable)
     }
@@ -520,7 +572,7 @@ class ExecutionViewModel @Inject constructor(
 
     private fun sendEvent(event: ExecutionEvent) {
         viewModelScope.launch {
-            _events.emit(event)
+            _events.send(event)
         }
     }
 
@@ -532,8 +584,6 @@ class ExecutionViewModel @Inject constructor(
 
         /** Pausa antes de avanzar solo, para que se llegue a ver la selección. */
         const val AUTO_ADVANCE_DELAY_MILLIS = 400L
-
-        private const val EVENT_BUFFER_SIZE = 8
 
         /** Claves de la foto pendiente en el [SavedStateHandle] (ver [rememberPendingPhoto]). */
         private const val KEY_PENDING_PHOTO_PATH = "pendingPhotoPath"

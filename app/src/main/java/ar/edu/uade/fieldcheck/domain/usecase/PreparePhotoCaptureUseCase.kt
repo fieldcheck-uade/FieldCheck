@@ -15,7 +15,7 @@ class PreparePhotoCaptureUseCase @Inject constructor(
     private val photoStorage: PhotoStorage,
 ) {
 
-    operator fun invoke(): Resource<PendingPhoto> {
+    suspend operator fun invoke(): Resource<PendingPhoto> {
         return photoStorage.createPhotoFile()
     }
 }

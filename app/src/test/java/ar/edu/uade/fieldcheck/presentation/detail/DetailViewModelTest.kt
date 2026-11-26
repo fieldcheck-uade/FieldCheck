@@ -176,6 +176,24 @@ class DetailViewModelTest {
     }
 
     @Test
+    fun `an effect is kept until the screen listens again (for example, after rotating)`() = runTest {
+        val repository = FakeInspectionRepository()
+        val detail = createFinishedDetail(
+            items = listOf(createTestItemResult(position = 0, result = ItemResultValue.NOT_COMPLIES, note = "Sin tapa")),
+        )
+        repository.emitDetail(inspectionId, Resource.Success(detail))
+        val viewModel = createViewModel(repository)
+        val expectedSummary = BuildInspectionSummaryUseCase(clock).invoke(detail)
+
+        // Nadie escucha los efectos en este momento.
+        viewModel.onShareClick()
+
+        viewModel.effects.test {
+            assertEquals(DetailEffect.ShareSummary(expectedSummary), awaitItem())
+        }
+    }
+
+    @Test
     fun `shows the error when the inspection cannot be read`() = runTest {
         val repository = FakeInspectionRepository()
         repository.emitDetail(inspectionId, Resource.Error("No pudimos leer la inspección."))

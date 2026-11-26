@@ -168,6 +168,21 @@ class NewInspectionViewModelTest {
     }
 
     @Test
+    fun `the started event is kept until the screen listens again (for example, after rotating)`() = runTest {
+        inspectionRepository.createInspectionResult = Resource.Success("inspection-42")
+        val viewModel = createViewModel()
+        viewModel.onTemplateSelected(createTestTemplate(id = "1"))
+        viewModel.onSiteNameChange("Obra")
+
+        // Nadie escucha los eventos en este momento.
+        viewModel.onStartInspectionClick()
+
+        viewModel.events.test {
+            assertEquals(NewInspectionEvent.InspectionStarted("inspection-42"), awaitItem())
+        }
+    }
+
+    @Test
     fun `repository failure keeps the sheet open with the error`() = runTest {
         inspectionRepository.createInspectionResult = Resource.Error("No pudimos crear la inspección.")
         val viewModel = createViewModel()

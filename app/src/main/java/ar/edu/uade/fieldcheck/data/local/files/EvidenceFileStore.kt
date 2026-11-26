@@ -33,27 +33,30 @@ class EvidenceFileStore @Inject constructor(
     @ApplicationContext private val context: Context,
 ) : PhotoStorage {
 
-    override fun createPhotoFile(): Resource<PendingPhoto> {
-        try {
-            val directory = getEvidenceDirectory()
-            if (!directory.exists()) {
-                directory.mkdirs()
+    override suspend fun createPhotoFile(): Resource<PendingPhoto> {
+        // Crear carpetas y archivos es trabajo de disco: fuera del hilo principal.
+        return withContext(Dispatchers.IO) {
+            try {
+                val directory = getEvidenceDirectory()
+                if (!directory.exists()) {
+                    directory.mkdirs()
+                }
+
+                val file = File(directory, "evidence_${UUID.randomUUID()}.jpg")
+                file.createNewFile()
+
+                val contentUri: Uri = FileProvider.getUriForFile(context, getAuthority(), file)
+                val pendingPhoto = PendingPhoto(
+                    filePath = file.absolutePath,
+                    contentUri = contentUri.toString(),
+                )
+                Resource.Success(pendingPhoto)
+            } catch (exception: IOException) {
+                Resource.Error(
+                    message = "No se pudo guardar la foto. Liberá espacio e intentá de nuevo.",
+                    cause = exception,
+                )
             }
-
-            val file = File(directory, "evidence_${UUID.randomUUID()}.jpg")
-            file.createNewFile()
-
-            val contentUri: Uri = FileProvider.getUriForFile(context, getAuthority(), file)
-            val pendingPhoto = PendingPhoto(
-                filePath = file.absolutePath,
-                contentUri = contentUri.toString(),
-            )
-            return Resource.Success(pendingPhoto)
-        } catch (exception: IOException) {
-            return Resource.Error(
-                message = "No se pudo guardar la foto. Liberá espacio e intentá de nuevo.",
-                cause = exception,
-            )
         }
     }
 
@@ -61,12 +64,16 @@ class EvidenceFileStore @Inject constructor(
      * Solo borra archivos que estén dentro de la carpeta de evidencias. Es una protección:
      * una ruta mal armada nunca puede terminar borrando otro archivo de la app.
      */
-    override fun deletePhotoFile(filePath: String): Boolean {
-        val file = File(filePath)
-        if (!isInsideEvidenceDirectory(file)) {
-            return false
+    override suspend fun deletePhotoFile(filePath: String): Boolean {
+        // Borrar un archivo es trabajo de disco: fuera del hilo principal.
+        return withContext(Dispatchers.IO) {
+            val file = File(filePath)
+            if (isInsideEvidenceDirectory(file)) {
+                file.delete()
+            } else {
+                false
+            }
         }
-        return file.delete()
     }
 
     override suspend fun compressPhoto(filePath: String): Resource<Unit> {

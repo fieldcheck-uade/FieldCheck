@@ -18,12 +18,12 @@ import ar.edu.uade.fieldcheck.domain.usecase.ObserveConnectivityUseCase
 import ar.edu.uade.fieldcheck.domain.usecase.RetrySyncUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -88,9 +88,12 @@ class DetailViewModel @Inject constructor(
     private val _isOnline = MutableStateFlow(true)
     val isOnline: StateFlow<Boolean> = _isOnline.asStateFlow()
 
-    /** Sin `replay`: un evento ya consumido no se repite al volver a suscribirse. */
-    private val _effects = MutableSharedFlow<DetailEffect>()
-    val effects: SharedFlow<DetailEffect> = _effects.asSharedFlow()
+    /**
+     * Efectos de una sola vez. Un Channel entrega cada uno una sola vez y, si la pantalla no está
+     * escuchando (por ejemplo, mientras se rota), lo guarda hasta que vuelva.
+     */
+    private val _effects = Channel<DetailEffect>(Channel.BUFFERED)
+    val effects: Flow<DetailEffect> = _effects.receiveAsFlow()
 
     /**
      * Último detalle leído. Lo guardamos completo (y no solo [DetailContent]) porque
@@ -162,7 +165,7 @@ class DetailViewModel @Inject constructor(
 
         val summary = buildInspectionSummary(detail)
         viewModelScope.launch {
-            _effects.emit(DetailEffect.ShareSummary(summary))
+            _effects.send(DetailEffect.ShareSummary(summary))
         }
     }
 
@@ -192,7 +195,7 @@ class DetailViewModel @Inject constructor(
             }
 
             is Resource.Error -> {
-                _effects.emit(DetailEffect.ShowMessage(result.message))
+                _effects.send(DetailEffect.ShowMessage(result.message))
             }
         }
     }

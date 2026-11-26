@@ -137,6 +137,20 @@ class ReviewViewModelTest {
     }
 
     @Test
+    fun `the finalized event is kept until the screen listens again (for example, after rotating)`() = runTest {
+        val repository = createRepositoryWith(completeItems())
+        val viewModel = createViewModel(repository)
+
+        // Nadie escucha los eventos en este momento.
+        viewModel.onFinalizeClick()
+        viewModel.onConfirmFinalize()
+
+        viewModel.events.test {
+            assertEquals(ReviewEvent.Finalized(inspectionId), awaitItem())
+        }
+    }
+
+    @Test
     fun `confirming without opening the dialog does nothing`() = runTest {
         val repository = createRepositoryWith(completeItems())
         val viewModel = createViewModel(repository)

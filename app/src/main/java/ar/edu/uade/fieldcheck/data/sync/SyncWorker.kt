@@ -42,8 +42,26 @@ class SyncWorker @AssistedInject constructor(
         } catch (exception: CancellationException) {
             throw exception
         } catch (exception: Exception) {
-            // Por ejemplo, la base no se pudo leer: se prueba de nuevo más tarde.
-            return Result.retry()
+            // Por ejemplo, la base no se pudo leer: se prueba de nuevo más tarde, pero no para
+            // siempre. Si el error se repite, se corta acá; las inspecciones siguen pendientes en
+            // la base y se vuelven a intentar cuando la app arranca, al finalizar otra inspección
+            // o con el botón "Reintentar" del detalle.
+            return resultForUnexpectedError()
         }
+    }
+
+    /** Decide si un error inesperado se reintenta o si ya se probó demasiadas veces. */
+    private fun resultForUnexpectedError(): Result {
+        // runAttemptCount arranca en 0 en la primera ejecución y suma 1 en cada reintento.
+        val attemptNumber = runAttemptCount + 1
+        if (attemptNumber >= MAX_ATTEMPTS_AFTER_UNEXPECTED_ERROR) {
+            return Result.failure()
+        }
+        return Result.retry()
+    }
+
+    private companion object {
+        /** Cantidad máxima de ejecuciones antes de abandonar por un error inesperado. */
+        const val MAX_ATTEMPTS_AFTER_UNEXPECTED_ERROR = 5
     }
 }

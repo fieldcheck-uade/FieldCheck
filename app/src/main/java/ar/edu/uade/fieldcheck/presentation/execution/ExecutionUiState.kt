@@ -2,6 +2,7 @@ package ar.edu.uade.fieldcheck.presentation.execution
 
 import ar.edu.uade.fieldcheck.domain.model.Evidence
 import ar.edu.uade.fieldcheck.domain.model.ItemResult
+import ar.edu.uade.fieldcheck.domain.model.ItemResultValue
 
 /**
  * Lo que la pantalla P3 necesita para dibujar el ítem actual.
@@ -54,8 +55,9 @@ data class ExecutionContent(
 /**
  * Eventos de una sola vez que el ViewModel le pide a la pantalla.
  *
- * Van por un `SharedFlow` y no por el estado porque no deben repetirse al rotar
- * el teléfono (por ejemplo, abrir la cámara dos veces).
+ * Van por un `Channel` y no por el estado porque no deben repetirse al rotar
+ * el teléfono (por ejemplo, abrir la cámara dos veces). Y si la pantalla no está
+ * escuchando justo en ese momento, el `Channel` guarda el evento hasta que vuelva.
  */
 sealed interface ExecutionEvent {
 
@@ -70,6 +72,15 @@ sealed interface ExecutionEvent {
 
     /** No hay app de cámara en el teléfono. */
     data object CameraUnavailable : ExecutionEvent
+
+    /**
+     * Se borró el resultado de un ítem (se tocó de nuevo el ya elegido): Snackbar
+     * "Resultado borrado" con "Deshacer", por si fue un toque accidental (por ejemplo, con guantes).
+     */
+    data class ResultCleared(
+        val itemResultId: Long,
+        val previousResult: ItemResultValue,
+    ) : ExecutionEvent
 
     /** Algo falló al guardar; [message] ya está en lenguaje simple. */
     data class ShowError(val message: String) : ExecutionEvent

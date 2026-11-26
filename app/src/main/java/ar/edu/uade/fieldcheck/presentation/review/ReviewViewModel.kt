@@ -15,12 +15,12 @@ import ar.edu.uade.fieldcheck.domain.usecase.GetInspectionDetailUseCase
 import ar.edu.uade.fieldcheck.domain.usecase.ObserveConnectivityUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -58,9 +58,12 @@ class ReviewViewModel @Inject constructor(
     private val _isOnline = MutableStateFlow(true)
     val isOnline: StateFlow<Boolean> = _isOnline.asStateFlow()
 
-    /** Navegar y mostrar un Snackbar pasan una sola vez: por eso van en un SharedFlow y no en el estado. */
-    private val _events = MutableSharedFlow<ReviewEvent>()
-    val events: SharedFlow<ReviewEvent> = _events.asSharedFlow()
+    /**
+     * Navegar y mostrar un Snackbar pasan una sola vez: por eso van en un Channel y no en el estado.
+     * Si la pantalla no está escuchando (por ejemplo, mientras se rota), el evento espera a que vuelva.
+     */
+    private val _events = Channel<ReviewEvent>(Channel.BUFFERED)
+    val events: Flow<ReviewEvent> = _events.receiveAsFlow()
 
     /** Guardamos la lectura para cancelarla si el usuario toca "Reintentar". */
     private var detailJob: Job? = null
@@ -154,12 +157,12 @@ class ReviewViewModel @Inject constructor(
             is Resource.Success -> {
                 // Queda en "finalizando" a propósito: la pantalla se va a ir a P5 y no hay que
                 // permitir otro toque mientras tanto.
-                _events.emit(ReviewEvent.Finalized(currentId))
+                _events.send(ReviewEvent.Finalized(currentId))
             }
 
             is Resource.Error -> {
                 _finalizationState.value = _finalizationState.value.copy(isFinalizing = false)
-                _events.emit(ReviewEvent.ShowMessage(result.message))
+                _events.send(ReviewEvent.ShowMessage(result.message))
             }
         }
     }

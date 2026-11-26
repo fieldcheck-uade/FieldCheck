@@ -182,7 +182,7 @@ La hoja inferior deja el campo y el botón en la zona del pulgar y evita una pan
 |---|---|
 | Tocar Cumple / N/A | Guarda y avanza al siguiente ítem. |
 | Tocar No cumple | Guarda y se queda en el ítem para agregar evidencia. |
-| Tocar el resultado ya seleccionado | Lo deja sin completar (permite corregir un toque accidental). |
+| Tocar el resultado ya seleccionado | Lo deja sin completar (permite corregir un toque accidental) y muestra el Snackbar "Resultado borrado" con **Deshacer**, por si el accidental fue ese segundo toque (por ejemplo, un doble toque con guantes). |
 | Escribir una nota | Se guarda al dejar de escribir. |
 | "Agregar foto" | Abre la cámara del sistema. Al volver con la foto: miniatura en la fila + `Snackbar` "Foto guardada". Si se cancela, no pasa nada. |
 | Mantener apretada una miniatura | Diálogo "¿Eliminar esta foto?" con **Cancelar** / **Eliminar**. |
