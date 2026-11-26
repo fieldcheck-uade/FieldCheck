@@ -21,12 +21,12 @@ import ar.edu.uade.fieldcheck.domain.usecase.SaveItemResultUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -66,8 +66,8 @@ class ExecutionViewModel @Inject constructor(
     private val _isOnline = MutableStateFlow(true)
     val isOnline: StateFlow<Boolean> = _isOnline.asStateFlow()
 
-    private val _events = MutableSharedFlow<ExecutionEvent>(extraBufferCapacity = EVENT_BUFFER_SIZE)
-    val events: SharedFlow<ExecutionEvent> = _events.asSharedFlow()
+    private val _events = Channel<ExecutionEvent>(Channel.BUFFERED)
+    val events: Flow<ExecutionEvent> = _events.receiveAsFlow()
 
     /** Última versión de la inspección que llegó de la base. */
     private var latestDetail: InspectionDetail? = null
@@ -526,7 +526,7 @@ class ExecutionViewModel @Inject constructor(
 
     private fun sendEvent(event: ExecutionEvent) {
         viewModelScope.launch {
-            _events.emit(event)
+            _events.send(event)
         }
     }
 
@@ -538,8 +538,6 @@ class ExecutionViewModel @Inject constructor(
 
         /** Pausa antes de avanzar solo, para que se llegue a ver la selección. */
         const val AUTO_ADVANCE_DELAY_MILLIS = 400L
-
-        private const val EVENT_BUFFER_SIZE = 8
 
         /** Claves de la foto pendiente en el [SavedStateHandle] (ver [rememberPendingPhoto]). */
         private const val KEY_PENDING_PHOTO_PATH = "pendingPhotoPath"

@@ -132,7 +132,7 @@ Pantalla (Compose) → ViewModel → Caso de uso → Repositorio (interfaz) → 
 2. `InspectionRepositoryImpl` la convierte a modelos de dominio y la envuelve en `Resource.Success`. Si la base falla, emite `Resource.Error` con un mensaje entendible.
 3. `GetInspectionHistoryUseCase` aplica la regla de negocio: separa "En curso" de "Finalizadas" y las ordena.
 4. `HistoryViewModel` lo traduce a `UiState` (`Loading`, `Success` o `Error`) y lo expone en un `StateFlow`.
-5. `HistoryScreen` dibuja cada estado. Los eventos de una sola vez (navegar, snackbars) viajan aparte, por un `SharedFlow`, para que no se repitan al rotar la pantalla.
+5. `HistoryScreen` dibuja cada estado. Los eventos de una sola vez (navegar, snackbars) viajan aparte, por un `Channel`, para que no se repitan al rotar la pantalla ni se pierdan si la pantalla no está escuchando en ese momento.
 
 **Cómo se sincroniza una inspección (RF03)**
 

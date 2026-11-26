@@ -11,12 +11,12 @@ import ar.edu.uade.fieldcheck.domain.usecase.GetTemplatesUseCase
 import ar.edu.uade.fieldcheck.domain.usecase.ObserveConnectivityUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -72,10 +72,11 @@ class NewInspectionViewModel @Inject constructor(
 
     /**
      * Navegar es un evento de una sola vez: si fuera estado, al volver a esta pantalla
-     * se volvería a navegar. Por eso va en un SharedFlow y no en un StateFlow.
+     * se volvería a navegar. Por eso va en un Channel y no en un StateFlow: si la pantalla
+     * no está escuchando (por ejemplo, mientras se rota), el evento espera a que vuelva.
      */
-    private val _events = MutableSharedFlow<NewInspectionEvent>(extraBufferCapacity = 1)
-    val events: SharedFlow<NewInspectionEvent> = _events.asSharedFlow()
+    private val _events = Channel<NewInspectionEvent>(Channel.BUFFERED)
+    val events: Flow<NewInspectionEvent> = _events.receiveAsFlow()
 
     /** Guardamos el trabajo de lectura para poder cancelarlo si el usuario toca "Reintentar". */
     private var templatesJob: Job? = null
@@ -172,7 +173,7 @@ class NewInspectionViewModel @Inject constructor(
         when (result) {
             is CreateInspectionResult.Created -> {
                 _startSheetState.value = null
-                _events.tryEmit(NewInspectionEvent.InspectionStarted(result.inspectionId))
+                _events.trySend(NewInspectionEvent.InspectionStarted(result.inspectionId))
             }
 
             is CreateInspectionResult.SiteRequired -> {

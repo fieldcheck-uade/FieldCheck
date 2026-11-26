@@ -340,6 +340,19 @@ class ExecutionViewModelTest {
     }
 
     @Test
+    fun `an event is kept until the screen listens again (for example, after rotating)`() = runTest {
+        givenItems(createTestItemResult(position = 0))
+        val viewModel = createViewModel()
+
+        // Nadie escucha los eventos en este momento.
+        viewModel.onCameraUnavailable()
+
+        viewModel.events.test {
+            assertEquals(ExecutionEvent.CameraUnavailable, awaitItem())
+        }
+    }
+
+    @Test
     fun `no camera app discards the photo file and tells the user`() = runTest {
         givenItems(createTestItemResult(position = 0))
         val viewModel = createViewModel()

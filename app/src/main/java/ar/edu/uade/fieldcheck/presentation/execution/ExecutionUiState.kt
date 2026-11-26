@@ -54,8 +54,9 @@ data class ExecutionContent(
 /**
  * Eventos de una sola vez que el ViewModel le pide a la pantalla.
  *
- * Van por un `SharedFlow` y no por el estado porque no deben repetirse al rotar
- * el teléfono (por ejemplo, abrir la cámara dos veces).
+ * Van por un `Channel` y no por el estado porque no deben repetirse al rotar
+ * el teléfono (por ejemplo, abrir la cámara dos veces). Y si la pantalla no está
+ * escuchando justo en ese momento, el `Channel` guarda el evento hasta que vuelva.
  */
 sealed interface ExecutionEvent {
 
