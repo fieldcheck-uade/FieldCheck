@@ -345,14 +345,16 @@ class ExecutionViewModel @Inject constructor(
             return
         }
 
-        when (val preparation = preparePhotoCapture()) {
-            is Resource.Success -> {
-                rememberPendingPhoto(filePath = preparation.data.filePath, itemId = item.id)
-                sendEvent(ExecutionEvent.OpenCamera(preparation.data.contentUri))
-            }
+        viewModelScope.launch {
+            when (val preparation = preparePhotoCapture()) {
+                is Resource.Success -> {
+                    rememberPendingPhoto(filePath = preparation.data.filePath, itemId = item.id)
+                    sendEvent(ExecutionEvent.OpenCamera(preparation.data.contentUri))
+                }
 
-            is Resource.Error -> {
-                sendEvent(ExecutionEvent.ShowError(preparation.message))
+                is Resource.Error -> {
+                    sendEvent(ExecutionEvent.ShowError(preparation.message))
+                }
             }
         }
     }
@@ -368,7 +370,9 @@ class ExecutionViewModel @Inject constructor(
         }
 
         if (!success) {
-            discardPhoto(filePath)
+            viewModelScope.launch {
+                discardPhoto(filePath)
+            }
             return
         }
 
@@ -393,7 +397,9 @@ class ExecutionViewModel @Inject constructor(
         forgetPendingPhoto()
 
         if (filePath != null) {
-            discardPhoto(filePath)
+            viewModelScope.launch {
+                discardPhoto(filePath)
+            }
         }
         sendEvent(ExecutionEvent.CameraUnavailable)
     }

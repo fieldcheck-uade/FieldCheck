@@ -50,7 +50,7 @@ class EvidenceUseCasesTest {
     }
 
     @Test
-    fun `prepare photo returns the file created by the storage`() {
+    fun `prepare photo returns the file created by the storage`() = runTest {
         val storage = FakePhotoStorage()
         val useCase = PreparePhotoCaptureUseCase(storage)
 
@@ -60,7 +60,7 @@ class EvidenceUseCasesTest {
     }
 
     @Test
-    fun `discarding a cancelled photo deletes its file`() {
+    fun `discarding a cancelled photo deletes its file`() = runTest {
         val storage = FakePhotoStorage()
         val useCase = DiscardPhotoUseCase(storage)
 

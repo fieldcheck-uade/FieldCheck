@@ -11,7 +11,7 @@ class DiscardPhotoUseCase @Inject constructor(
     private val photoStorage: PhotoStorage,
 ) {
 
-    operator fun invoke(filePath: String) {
+    suspend operator fun invoke(filePath: String) {
         photoStorage.deletePhotoFile(filePath)
     }
 }

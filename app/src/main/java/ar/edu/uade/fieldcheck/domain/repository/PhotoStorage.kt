@@ -10,15 +10,19 @@ import ar.edu.uade.fieldcheck.domain.model.PendingPhoto
  */
 interface PhotoStorage {
 
-    /** Crea un archivo vacío donde la cámara va a guardar la próxima foto. */
-    fun createPhotoFile(): Resource<PendingPhoto>
+    /**
+     * Crea un archivo vacío donde la cámara va a guardar la próxima foto.
+     * Es `suspend` porque toca el disco: la implementación lo hace fuera del hilo principal.
+     */
+    suspend fun createPhotoFile(): Resource<PendingPhoto>
 
     /**
      * Borra el archivo de una foto, por ejemplo si el usuario canceló la cámara.
+     * Es `suspend` porque toca el disco: la implementación lo hace fuera del hilo principal.
      *
      * @return `true` si el archivo existía y se borró.
      */
-    fun deletePhotoFile(filePath: String): Boolean
+    suspend fun deletePhotoFile(filePath: String): Boolean
 
     /**
      * Reduce la foto ya tomada en el mismo archivo (RNF07): lado mayor de 1600 px y JPEG
