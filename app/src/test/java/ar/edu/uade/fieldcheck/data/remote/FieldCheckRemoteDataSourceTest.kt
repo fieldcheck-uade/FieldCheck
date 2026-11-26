@@ -168,6 +168,24 @@ class FieldCheckRemoteDataSourceTest {
         assertEquals(1, templates[0].items[0].position)
     }
 
+    @Test
+    fun `templates without a body (204) are a permanent error instead of a crash`() = runTest {
+        server.enqueue(MockResponse.Builder().code(204).build())
+
+        val result = dataSource.getTemplates()
+
+        assertEquals(ApiResult.PermanentError("El servidor respondió sin datos."), result)
+    }
+
+    @Test
+    fun `an inspection answered without a body (204) still counts as success`() = runTest {
+        server.enqueue(MockResponse.Builder().code(204).build())
+
+        val result = dataSource.sendInspection(createInspectionDto())
+
+        assertEquals(ApiResult.Success(Unit), result)
+    }
+
     private fun createInspectionDto(): InspectionDto {
         return InspectionDto(
             clientUuid = "uuid-1",
